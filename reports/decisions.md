@@ -135,33 +135,55 @@ As decisões abaixo serão preenchidas conforme avançarmos no projeto.
 
 ## DEC-006 — Definição da unidade de análise e variável-alvo
 
-**Status:** Pendente
+**Status:** Definida após integração Gold e EDA.
 
-A definir após auditoria dos dados.
+**Classificação:** decisão específica do grupo.
+
+Uma linha por aluno avaliado em 2024 nas redes Estadual e Municipal,
+com target binário `alfabetizado`. A definição vigente consta em
+[Definição do dataset Gold](modeling_dataset_definition.md).
 
 ---
 
-## DEC-007 — Estratégia de separação entre treino e teste
+## DEC-007 — Estratégia de separação entre treino, validação e teste
 
-**Status:** Pendente
+**Status:** Definida e validada no parquet Gold em 2026-09-08.
 
-A definir após análise da estrutura, período e distribuição da variável-alvo.
+**Classificação:** decisão metodológica do grupo, não prescrição da FIAP.
+
+Usar `id_municipio` como group, com GroupShuffleSplit em dois estágios
+(70/30 e 50/50 do temporário), semente 42 em ambos. Nenhum município pode
+aparecer em mais de um conjunto. X inicial contém 16 candidatas;
+identificadores e peso ficam separados. Não houve seleção por correlação.
+A população real resultou em 1.311.003/297.079/243.746 alunos nos conjuntos
+treino/validação/teste, com zero overlap e classes próximas ao global.
+A decisão completa, classificação das colunas e limitações estão em
+[Definição de X/y/groups e split](modeling_split_definition.md).
 
 ---
 
 ## DEC-008 — Métrica principal de avaliação
 
-**Status:** Pendente
+**Status:** Definida provisoriamente para baselines.
 
-A definir após análise da distribuição das classes e do impacto dos diferentes tipos de erro.
+**Classificação:** decisão metodológica do grupo — REVISAR COM O GRUPO.
+
+Comparar modelos primeiro por ROC AUC na validação, considerando F1 e recall no
+contexto de identificação de risco. Manter limiar padrão 0,5 nesta rodada. A
+decisão evita selecionar o Dummy pela accuracy/F1 de uma única classe e não é
+atribuída como prescrição específica da FIAP.
 
 ---
 
 ## DEC-009 — Algoritmos candidatos
 
-**Status:** Pendente
+**Status:** Baselines executados.
 
-A definir após EDA e construção do baseline.
+**Classificação:** decisão metodológica do grupo.
+
+Dummy, regressão logística e árvore de decisão formam a comparação progressiva.
+Random Forest foi tentado e interrompido por custo local desproporcional. Não foi
+adicionada dependência de boosting.
 
 ---
 
@@ -183,17 +205,25 @@ A definir após avaliação inicial dos modelos candidatos.
 
 ## DEC-012 — Seleção do modelo final
 
-**Status:** Pendente
+**Status:** Melhor baseline provisório definido; modelo final pendente.
 
-A decisão deverá considerar desempenho, generalização, estabilidade e interpretabilidade.
+**Classificação:** decisão metodológica do grupo — REVISAR COM O GRUPO.
+
+A árvore de decisão obteve a maior ROC AUC de validação (0,6214), mas mostrou
+gap de 0,0603 em relação ao treino. Ela serve à análise inicial e não é declarada
+modelo final antes de tuning controlado e avaliação única do teste.
 
 ---
 
 ## DEC-013 — Estratégia de interpretabilidade
 
-**Status:** Pendente
+**Status:** Feature Importance inicial concluída; SHAP adiado.
 
-A definir de acordo com o modelo final, considerando Feature Importance e/ou SHAP.
+**Classificação:** curricular complementar/recomendado e decisão de execução do grupo.
+
+Foi usada importância nativa da árvore, agregada às features de origem. SHAP não
+foi executado por custo e dependência adicional. Nenhuma importância recebe
+interpretação causal.
 
 ---
 
@@ -212,39 +242,79 @@ A utilização dessas técnicas dependerá da estrutura e qualidade dos dados di
 
 ## DEC-015 — Estratégia de acesso e materialização dos dados
 
-**Status:** Aprovada
+**Status:** Atualizada após integração Gold (PR #2) e alinhamento do contrato.
 
-**Contexto:**  
-A Fase 3 utiliza como fonte principal os dados da Base dos Dados acessados via Google BigQuery. O dataset de modelagem é derivado dessas consultas e posteriormente materializado localmente em formato Parquet.
+**Classificação:** decisão específica do grupo, apoiada no requisito oficial
+que determina uso da camada Gold da Fase 2.
 
-**Decisão:**  
-Utilizar o BigQuery como fonte oficial e reproduzível dos dados e manter o arquivo `modeling_dataset_2024.parquet` como artefato local derivado, sem versioná-lo diretamente no GitHub.
+**Decisão vigente:** utilizar as features históricas, territoriais e
+socioeconômicas da Gold da Fase 2 no S3, consolidadas por `gold_features.py`
+e integradas aos alunos de 2024 por `build_modeling_dataset_from_gold`.
+O artefato de modelagem é `data/processed/modeling_dataset_2024_gold.parquet`,
+formalizado em `dataset_contract.py` e verificado por `validate_dataset.py`.
 
-**Justificativa:**  
-A abordagem permite:
+**Histórico:** a decisão inicial utilizava consultas diretas ao BigQuery e
+materializava `modeling_dataset_2024.parquet`. Esse fluxo foi superado como
+definição da modelagem. O arquivo é legado opcional. A entrada individual vigente vem diretamente
+da Silver de alunos no S3, partição 2026-07-09, filtrada para alunos presentes
+com prova preenchida em 2024 nas redes Estadual e Municipal.
+`gold_pipeline.py` executa o fluxo Silver + Gold sem BigQuery ou GCP.
 
-- filtrar os dados diretamente na origem;
-- evitar versionamento desnecessário de datasets derivados;
-- manter rastreabilidade da fonte;
-- reproduzir o dataset por meio de código;
-- separar claramente dados de origem, regras de preparação e artefatos de modelagem.
+**Impactos:** o parquet Gold é um artefato derivado local não versionado.
+Reproduzir a integração requer acesso às fontes; validar um parquet já
+materializado e executar testes sintéticos não requer credenciais.
+O fluxo de reprodução, o schema de 24 colunas e as regras de missingness
+estão em [Definição do dataset Gold](modeling_dataset_definition.md).
 
-A utilização do BigQuery também é coerente com a arquitetura adotada na Fase 2. O feedback da etapa anterior indicou que essa escolha é válida, desde que suas consequências sejam documentadas.
+---
 
-**Impactos:**  
+## DEC-016 — Interpretação da granularidade do modelo
 
-A reprodução completa do dataset requer:
+**Status:** auditoria concluída; interpretação a revisar com o grupo.
 
-- acesso à Google Cloud;
-- autenticação via Application Default Credentials;
-- projeto GCP com acesso ao BigQuery;
-- instalação das dependências especificadas em `requirements.txt`.
+**Classificação:** decisão metodológica do grupo/extensão diagnóstica. O target
+individual e o uso da Gold atendem ao Tech Challenge; esta auditoria específica
+não é atribuída como prescrição da FIAP.
 
-O arquivo Parquet não será tratado como fonte oficial. Ele poderá ser regenerado a partir das queries e do pipeline do projeto.
+**Problema:** o target é individual, enquanto as 16 features são de rede,
+município+rede, UF ou disponibilidade do contexto.
 
-**Artefato gerado:**
+**Alternativas consideradas:** interpretar a saída como discriminação individual
+plena; reformular imediatamente o target; ou preservar a tarefa formal e limitar
+a interpretação ao risco condicionado ao contexto.
 
-`data/processed/modeling_dataset_2024.parquet`
+**Decisão:** preservar target, features e split nesta etapa e interpretar a
+probabilidade como condicionada ao contexto territorial/rede. O enriquecimento
+com variáveis individuais fica como extensão futura, marcada **REVISAR COM O
+GRUPO**.
 
-**Observação:**  
-O projeto deverá possuir um pipeline executável capaz de consultar o BigQuery, construir, validar e salvar o dataset de modelagem.
+**Impacto:** alunos do mesmo município+rede recebem o mesmo vetor e a mesma
+probabilidade nos pipelines atuais. O uso de negócio mais defensável é priorizar
+territórios/redes, sem apresentar o resultado como diagnóstico pedagógico do
+aluno. Evidências completas em [Auditoria de granularidade](granularity_audit.md).
+
+---
+
+## DEC-017 — Proficiência contemporânea e enriquecimento escolar
+
+**Status:** auditoria concluída; cenários futuros pendentes do grupo.
+
+**Classificação:** tratamento de data leakage é requisito explícito do Tech
+Challenge. A auditoria de linhagem, a matriz temporal e a escolha de fontes são
+decisões metodológicas do grupo. Censo Escolar é uma fonte externa permitida,
+não obrigatória.
+
+**Problema:** a Silver contém `proficiencia`, que poderia aparentar ser uma
+feature individual forte, enquanto o projeto carece de atributos escolares.
+
+**Decisão nesta etapa:** não alterar X. Classificar `proficiencia` 2024 como
+leakage direto porque reconstrói `alfabetizado` pelo corte oficial de 743 sem
+divergência nos 1.851.828 alunos elegíveis. Manter `serie`, `caderno`, `presenca`
+e `preenchimento_caderno` fora de X. Avaliar Censo Escolar 2023 por `id_escola`
+como cenário futuro.
+
+**Impacto:** preserva a validade da avaliação atual e abre uma alternativa para
+adicionar granularidade escolar pré-target. Integração, cobertura e seleção de
+atributos permanecem **REVISAR COM O GRUPO**. Evidências em
+[Linhagem do target](target_lineage_audit.md) e
+[Matriz de candidatas](feature_candidate_audit.md).

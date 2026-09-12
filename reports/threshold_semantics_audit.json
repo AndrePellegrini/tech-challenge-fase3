@@ -1,0 +1,65 @@
+{
+  "class_semantics": {
+    "0": "não alfabetizado / risco",
+    "1": "alfabetizado"
+  },
+  "predict_proba_column_1": "P(alfabetizado)",
+  "prob_risco": "1 - P(alfabetizado)",
+  "previous_threshold_interpretation_correct": false,
+  "correction": "reduzir o threshold de P(alfabetizado) aumenta previsões de classe 1 e reduz detecção da classe 0",
+  "balanced_objective_candidate": {
+    "threshold_prob_alfabetizado": 0.6,
+    "accuracy": 0.5596524830095698,
+    "balanced_accuracy": 0.5901188412682705,
+    "precision_class_0_risk": 0.465615992213529,
+    "recall_class_0_risk": 0.7381039174628473,
+    "f1_class_0_risk": 0.5710181997048697,
+    "precision_class_1_literate": 0.7193790422207689,
+    "recall_class_1_literate": 0.4421337650736936,
+    "f1_class_1_literate": 0.5476681142983597,
+    "specificity_for_class_1": 0.7381039174628473,
+    "true_risk_predicted_literate": 30893,
+    "true_risk_predicted_literate_share_of_true_risk": 0.26189608253715274,
+    "true_risk_predicted_literate_share_of_validation": 0.1039891745966561,
+    "false_risk_alerts_literate_predicted_risk": 99925,
+    "confusion_matrix_true_rows_predicted_columns_0_1": [
+      [
+        87066,
+        30893
+      ],
+      [
+        99925,
+        79195
+      ]
+    ]
+  },
+  "high_risk_sensitivity_example": {
+    "threshold_prob_alfabetizado": 0.6,
+    "accuracy": 0.5596524830095698,
+    "balanced_accuracy": 0.5901188412682705,
+    "precision_class_0_risk": 0.465615992213529,
+    "recall_class_0_risk": 0.7381039174628473,
+    "f1_class_0_risk": 0.5710181997048697,
+    "precision_class_1_literate": 0.7193790422207689,
+    "recall_class_1_literate": 0.4421337650736936,
+    "f1_class_1_literate": 0.5476681142983597,
+    "specificity_for_class_1": 0.7381039174628473,
+    "true_risk_predicted_literate": 30893,
+    "true_risk_predicted_literate_share_of_true_risk": 0.26189608253715274,
+    "true_risk_predicted_literate_share_of_validation": 0.1039891745966561,
+    "false_risk_alerts_literate_predicted_risk": 99925,
+    "confusion_matrix_true_rows_predicted_columns_0_1": [
+      [
+        87066,
+        30893
+      ],
+      [
+        99925,
+        79195
+      ]
+    ]
+  },
+  "recommendation": "C - não congelar threshold binário; ordenar territórios por prob_risco contínua",
+  "municipal_analysis": "ranking por probabilidade média de risco; sem classificação binária congelada",
+  "test_accessed": false
+}

@@ -1,0 +1,132 @@
+{
+  "dataset": "C:\\Users\\pedro\\Desktop\\tech-challenge-3\\data\\processed\\modeling_dataset_2024_gold.parquet",
+  "shape": [
+    1851828,
+    24
+  ],
+  "random_state": 42,
+  "features": [
+    "rede",
+    "sigla_uf",
+    "taxa_alfabetizacao_municipio_2023",
+    "media_portugues_municipio_2023",
+    "percentual_participacao_municipio_2023",
+    "total_alunos_municipio_2023",
+    "pct_alfabetizados_municipio_2023",
+    "proficiencia_media_ponderada_2023",
+    "meta_alfabetizacao_municipio_2024",
+    "gap_para_meta_municipio_2024",
+    "idhm",
+    "idhm_educacao",
+    "idhm_renda",
+    "idhm_longevidade",
+    "atingiu_meta_municipio_2024",
+    "gold_historico_disponivel"
+  ],
+  "preprocessing": "mediana numérica; moda categórica; one-hot sparse; escala somente logística",
+  "selected_model": "random_forest_controlled",
+  "selected_parameters": {
+    "bootstrap": true,
+    "ccp_alpha": 0.0,
+    "class_weight": null,
+    "criterion": "gini",
+    "max_depth": 10,
+    "max_features": "sqrt",
+    "max_leaf_nodes": null,
+    "max_samples": null,
+    "min_impurity_decrease": 0.0,
+    "min_samples_leaf": 200,
+    "min_samples_split": 2,
+    "min_weight_fraction_leaf": 0.0,
+    "monotonic_cst": null,
+    "n_estimators": 40,
+    "n_jobs": 2,
+    "oob_score": false,
+    "random_state": 42,
+    "verbose": 0,
+    "warm_start": false
+  },
+  "selected_threshold": null,
+  "sample_weight_used": false,
+  "sample_weight_experiment": {
+    "model": "random_forest_controlled",
+    "parameters": {
+      "bootstrap": true,
+      "ccp_alpha": 0.0,
+      "class_weight": null,
+      "criterion": "gini",
+      "max_depth": 10,
+      "max_features": "sqrt",
+      "max_leaf_nodes": null,
+      "max_samples": null,
+      "min_impurity_decrease": 0.0,
+      "min_samples_leaf": 200,
+      "min_samples_split": 2,
+      "min_weight_fraction_leaf": 0.0,
+      "monotonic_cst": null,
+      "n_estimators": 40,
+      "n_jobs": 2,
+      "oob_score": false,
+      "random_state": 42,
+      "verbose": 0,
+      "warm_start": false
+    },
+    "training_seconds": 331.56208800000604,
+    "encoded_features": 43,
+    "train": {
+      "threshold": 0.5,
+      "accuracy": 0.6429214883566247,
+      "precision": 0.6630985474743787,
+      "recall": 0.8141097883326844,
+      "f1": 0.7308854208883699,
+      "confusion_matrix": [
+        [
+          207176,
+          322979
+        ],
+        [
+          145152,
+          635696
+        ]
+      ],
+      "roc_auc": 0.6749412979000278
+    },
+    "validation": {
+      "threshold": 0.5,
+      "accuracy": 0.6356894967331922,
+      "precision": 0.6443473409432433,
+      "recall": 0.8833407771326485,
+      "f1": 0.7451498432926671,
+      "confusion_matrix": [
+        [
+          30626,
+          87333
+        ],
+        [
+          20896,
+          158224
+        ]
+      ],
+      "roc_auc": 0.6405349845091746
+    },
+    "auc_gap": 0.034406313390853205,
+    "observation": "tentativa única, memória limitada"
+  },
+  "test_accessed": false,
+  "grouped_cv": "não executada: custo redundante após holdout municipal em 1,85M linhas",
+  "shap": {
+    "executed": false,
+    "reason": "pacote shap ausente; não instalado para evitar dependência pesada",
+    "test_accessed": false
+  },
+  "versions": {
+    "python": "3.12.14",
+    "pandas": "2.3.3",
+    "numpy": "2.5.3",
+    "scikit_learn": "1.9.0"
+  },
+  "threshold_status": "não congelado após auditoria semântica",
+  "risk_probability": "1 - predict_proba[:, 1]",
+  "territorial_priority": "ranking contínuo por probabilidade média de risco",
+  "threshold_semantics_corrected": true
+}

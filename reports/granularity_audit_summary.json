@@ -1,0 +1,269 @@
+{
+  "scope": "auditoria descritiva; sem causalidade, retreino ou acesso ao teste",
+  "students": 1851828,
+  "feature_count": 16,
+  "features": [
+    "rede",
+    "sigla_uf",
+    "taxa_alfabetizacao_municipio_2023",
+    "media_portugues_municipio_2023",
+    "percentual_participacao_municipio_2023",
+    "total_alunos_municipio_2023",
+    "pct_alfabetizados_municipio_2023",
+    "proficiencia_media_ponderada_2023",
+    "meta_alfabetizacao_municipio_2024",
+    "gap_para_meta_municipio_2024",
+    "idhm",
+    "idhm_educacao",
+    "idhm_renda",
+    "idhm_longevidade",
+    "atingiu_meta_municipio_2024",
+    "gold_historico_disponivel"
+  ],
+  "feature_granularity": {
+    "rede": "rede",
+    "sigla_uf": "UF",
+    "taxa_alfabetizacao_municipio_2023": "município + rede",
+    "media_portugues_municipio_2023": "município + rede",
+    "percentual_participacao_municipio_2023": "município + rede",
+    "total_alunos_municipio_2023": "município + rede",
+    "pct_alfabetizados_municipio_2023": "município + rede",
+    "proficiencia_media_ponderada_2023": "município + rede",
+    "meta_alfabetizacao_municipio_2024": "município + rede",
+    "gap_para_meta_municipio_2024": "município + rede (derivada)",
+    "idhm": "UF",
+    "idhm_educacao": "UF",
+    "idhm_renda": "UF",
+    "idhm_longevidade": "UF",
+    "atingiu_meta_municipio_2024": "município + rede (derivada)",
+    "gold_historico_disponivel": "disponibilidade do contexto município + rede"
+  },
+  "profiles": {
+    "unique_profiles": 6430,
+    "students_in_duplicated_profiles": 1851828,
+    "duplicated_profile_student_share": 1.0,
+    "students_per_profile": {
+      "mean": 287.998133748056,
+      "median": 93.0,
+      "p90": 505.0,
+      "p95": 975.2999999999956,
+      "p99": 3181.1000000000004,
+      "max": 52622
+    }
+  },
+  "profile_size_bands": [
+    {
+      "band": "1",
+      "profiles": 0,
+      "students": 0,
+      "student_share": 0.0
+    },
+    {
+      "band": "2-5",
+      "profiles": 1,
+      "students": 5,
+      "student_share": 2.7000347764479207e-06
+    },
+    {
+      "band": "6-10",
+      "profiles": 62,
+      "students": 575,
+      "student_share": 0.00031050399929151087
+    },
+    {
+      "band": "11-50",
+      "profiles": 1843,
+      "students": 55340,
+      "student_share": 0.029883984905725587
+    },
+    {
+      "band": "51-100",
+      "profiles": 1485,
+      "students": 108256,
+      "student_share": 0.05845899295182922
+    },
+    {
+      "band": "101-500",
+      "profiles": 2392,
+      "students": 524619,
+      "student_share": 0.28329790887706635
+    },
+    {
+      "band": ">500",
+      "profiles": 647,
+      "students": 1163033,
+      "student_share": 0.6280459092313109
+    }
+  ],
+  "profile_types": [
+    {
+      "type": "mixed",
+      "profiles": 6350,
+      "students": 1848507,
+      "profile_share": 0.9875583203732504,
+      "student_share": 0.9982066369014833
+    },
+    {
+      "type": "pure_0",
+      "profiles": 2,
+      "students": 18,
+      "profile_share": 0.00031104199066874026,
+      "student_share": 9.720125195212514e-06
+    },
+    {
+      "type": "pure_1",
+      "profiles": 78,
+      "students": 3303,
+      "profile_share": 0.012130637636080872,
+      "student_share": 0.0017836429733214963
+    }
+  ],
+  "mixed_profile_uncertainty": [
+    {
+      "band": "0-10%",
+      "profiles": 7,
+      "students": 170,
+      "dataset_student_share": 9.18011823992293e-05
+    },
+    {
+      "band": "10-30%",
+      "profiles": 301,
+      "students": 43517,
+      "dataset_student_share": 0.023499482673336833
+    },
+    {
+      "band": "30-45%",
+      "profiles": 947,
+      "students": 272928,
+      "dataset_student_share": 0.14738301829327563
+    },
+    {
+      "band": "45-55%",
+      "profiles": 931,
+      "students": 392897,
+      "dataset_student_share": 0.21216711271241173
+    },
+    {
+      "band": "55-70%",
+      "profiles": 1732,
+      "students": 688448,
+      "dataset_student_share": 0.3717667083552036
+    },
+    {
+      "band": "70-90%",
+      "profiles": 1995,
+      "students": 391749,
+      "dataset_student_share": 0.21154718472773928
+    },
+    {
+      "band": "90-100%",
+      "profiles": 437,
+      "students": 58798,
+      "dataset_student_share": 0.031751328957116964
+    }
+  ],
+  "municipality_network": {
+    "groups": 6535,
+    "mixed_groups": 6451,
+    "mixed_group_share": 0.9871461361897476,
+    "students_in_mixed_groups": 1848462,
+    "mixed_group_student_share": 0.9981823365884953,
+    "students_per_group": {
+      "mean": 283.3707727620505,
+      "median": 91.0,
+      "p90": 500.0,
+      "p95": 964.1999999999971,
+      "p99": 3102.9799999999996,
+      "max": 52622
+    },
+    "target_rate": {
+      "count": 6535.0,
+      "mean": 0.6290397884406111,
+      "std": 0.19313592538487834,
+      "min": 0.0,
+      "10%": 0.3651893513310836,
+      "25%": 0.4882519740364026,
+      "50%": 0.6410256410256411,
+      "75%": 0.7758403543820029,
+      "90%": 0.8775510204081632,
+      "max": 1.0
+    },
+    "within_group_variance": {
+      "count": 6535.0,
+      "mean": 0.1996205401559012,
+      "std": 0.061396362465977586,
+      "min": 0.0,
+      "10%": 0.10750260192768903,
+      "25%": 0.1727837681698834,
+      "50%": 0.22180500658761523,
+      "75%": 0.24622968097462133,
+      "90%": 0.2517482517482518,
+      "max": 0.2777777777777778
+    }
+  },
+  "profile_vs_municipality_network": {
+    "groups": 6535,
+    "groups_with_one_profile": 6535,
+    "one_profile_group_share": 1.0,
+    "groups_with_multiple_profiles": 0,
+    "students_in_one_profile_groups": 1851828,
+    "one_profile_group_student_share": 1.0,
+    "max_profiles_in_context": 1,
+    "profiles_shared_by_multiple_contexts": 2,
+    "shared_profile_share": 0.00031104199066874026,
+    "max_contexts_sharing_profile": 55
+  },
+  "validation_prediction_identity": {
+    "logistic_regression": {
+      "groups": 988,
+      "identical_probability_groups": 988,
+      "identical_probability_group_share": 1.0,
+      "students_in_identical_probability_groups": 297079,
+      "identical_probability_student_share": 1.0,
+      "max_unique_probabilities_in_group": 1
+    },
+    "decision_tree": {
+      "groups": 988,
+      "identical_probability_groups": 988,
+      "identical_probability_group_share": 1.0,
+      "students_in_identical_probability_groups": 297079,
+      "identical_probability_student_share": 1.0,
+      "max_unique_probabilities_in_group": 1
+    }
+  },
+  "train_empirical_profile_bound": {
+    "majority_class_accuracy_within_partition": 0.6482105685494236,
+    "minimum_conflict_errors_within_partition": 461197,
+    "minimum_conflict_error_rate_within_partition": 0.3517894314505764,
+    "interpretation": "limite descritivo in-sample; não estima desempenho em municípios inéditos"
+  },
+  "variance_decomposition": {
+    "municipality": {
+      "groups": 5517,
+      "target_mean": 0.5978433202219645,
+      "total_variance": 0.2404266846879421,
+      "between_group_variance": 0.02307204026118522,
+      "within_group_variance": 0.21735464442675692,
+      "between_share": 0.0959628931835549,
+      "within_share": 0.9040371068164453,
+      "identity_residual": -5.551115123125783e-17
+    },
+    "municipality_network": {
+      "groups": 6535,
+      "target_mean": 0.5978433202219645,
+      "total_variance": 0.2404266846879421,
+      "between_group_variance": 0.02445394372025482,
+      "within_group_variance": 0.21597274096768732,
+      "between_share": 0.1017106056758817,
+      "within_share": 0.8982893943241185,
+      "identity_residual": -5.551115123125783e-17
+    }
+  },
+  "test_status": "fechado; nenhuma leitura posicional, previsão ou métrica",
+  "recommendation": "manter formulação, ajustar interpretação e revisar enriquecimento futuro com features individuais",
+  "review_with_group": [
+    "interpretação territorial como uso principal",
+    "incorporação futura de features individuais",
+    "eventual reformulação do produto analítico sem mudar o target nesta etapa"
+  ]
+}

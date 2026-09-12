@@ -1,0 +1,532 @@
+{
+  "source_rows": 3867999,
+  "official_population_rows": 1851828,
+  "official_X_before": [
+    "rede",
+    "sigla_uf",
+    "taxa_alfabetizacao_municipio_2023",
+    "media_portugues_municipio_2023",
+    "percentual_participacao_municipio_2023",
+    "total_alunos_municipio_2023",
+    "pct_alfabetizados_municipio_2023",
+    "proficiencia_media_ponderada_2023",
+    "meta_alfabetizacao_municipio_2024",
+    "gap_para_meta_municipio_2024",
+    "idhm",
+    "idhm_educacao",
+    "idhm_renda",
+    "idhm_longevidade",
+    "atingiu_meta_municipio_2024",
+    "gold_historico_disponivel"
+  ],
+  "official_X_changed": false,
+  "column_classification": {
+    "ano": {
+      "classification": "critério de elegibilidade",
+      "justification": "Seleciona o ciclo 2024; constante após filtro."
+    },
+    "id_municipio": {
+      "classification": "identificador/contexto",
+      "justification": "Chave territorial e de split; não é feature individual."
+    },
+    "id_municipio_nome": {
+      "classification": "identificador auxiliar",
+      "justification": "Rótulo para apresentação; redundante com o código."
+    },
+    "id_escola": {
+      "classification": "identificador",
+      "justification": "Permite join escolar futuro, mas não deve entrar cru em X."
+    },
+    "id_aluno": {
+      "classification": "identificador",
+      "justification": "Chave individual; sem semântica preditiva legítima."
+    },
+    "caderno": {
+      "classification": "possível artefato técnico",
+      "justification": "Código de caderno; significado detalhado não documentado no projeto; contemporâneo à avaliação."
+    },
+    "serie": {
+      "classification": "possível feature individual",
+      "justification": "Etapa escolar declarada; utilidade depende da variação após filtro."
+    },
+    "rede": {
+      "classification": "feature contextual",
+      "justification": "Dependência/rede de ensino; já pertence ao X oficial."
+    },
+    "presenca": {
+      "classification": "critério de elegibilidade",
+      "justification": "Usado para selecionar participantes presentes."
+    },
+    "preenchimento_caderno": {
+      "classification": "critério de elegibilidade",
+      "justification": "Usado para selecionar provas preenchidas."
+    },
+    "alfabetizado": {
+      "classification": "target",
+      "justification": "Classificação do mesmo evento avaliativo."
+    },
+    "proficiencia": {
+      "classification": "leakage direto",
+      "justification": "Resultado contínuo do mesmo evento que define o target pelo corte 743."
+    },
+    "peso_aluno": {
+      "classification": "peso amostral",
+      "justification": "Reservado para eventual sample_weight; não usar como feature."
+    },
+    "_ingestion_ts": {
+      "classification": "metadado técnico",
+      "justification": "Momento de ingestão."
+    },
+    "_source": {
+      "classification": "metadado técnico",
+      "justification": "Origem técnica."
+    },
+    "_table": {
+      "classification": "metadado técnico",
+      "justification": "Nome técnico da tabela."
+    },
+    "_processed_ts": {
+      "classification": "metadado técnico",
+      "justification": "Momento de processamento Silver."
+    },
+    "_layer": {
+      "classification": "metadado técnico",
+      "justification": "Camada da arquitetura."
+    }
+  },
+  "categoricals": {
+    "serie": {
+      "cardinality_including_na": 1,
+      "constant": true,
+      "values": [
+        {
+          "value": "2° ano do Ensino Fundamental",
+          "count": 1851828,
+          "share": 1.0
+        }
+      ],
+      "target_by_value": [
+        {
+          "value": "2° ano do Ensino Fundamental",
+          "students": 1851828,
+          "target_rate": 0.5978433202219645
+        }
+      ]
+    },
+    "caderno": {
+      "cardinality_including_na": 22,
+      "constant": false,
+      "values": [
+        {
+          "value": "1",
+          "count": 97138,
+          "share": 0.05245519562291962
+        },
+        {
+          "value": "3",
+          "count": 93366,
+          "share": 0.05041828938756731
+        },
+        {
+          "value": "5",
+          "count": 93351,
+          "share": 0.05041018928323797
+        },
+        {
+          "value": "2",
+          "count": 93301,
+          "share": 0.050383188935473486
+        },
+        {
+          "value": "4",
+          "count": 93242,
+          "share": 0.050351328525111406
+        },
+        {
+          "value": "7",
+          "count": 93064,
+          "share": 0.05025520728706986
+        },
+        {
+          "value": "6",
+          "count": 93049,
+          "share": 0.050247107182740516
+        },
+        {
+          "value": "15",
+          "count": 86462,
+          "share": 0.046690081368248024
+        },
+        {
+          "value": "8",
+          "count": 86290,
+          "share": 0.04659720017193821
+        },
+        {
+          "value": "20",
+          "count": 85437,
+          "share": 0.046136574239076196
+        },
+        {
+          "value": "10",
+          "count": 85391,
+          "share": 0.046111733919132876
+        },
+        {
+          "value": "9",
+          "count": 85313,
+          "share": 0.04606961337662029
+        },
+        {
+          "value": "12",
+          "count": 85278,
+          "share": 0.04605071313318516
+        },
+        {
+          "value": "13",
+          "count": 85242,
+          "share": 0.04603127288279473
+        },
+        {
+          "value": "16",
+          "count": 85207,
+          "share": 0.046012372639359596
+        },
+        {
+          "value": "11",
+          "count": 85200,
+          "share": 0.04600859259067257
+        },
+        {
+          "value": "17",
+          "count": 85194,
+          "share": 0.04600535254894083
+        },
+        {
+          "value": "21",
+          "count": 85160,
+          "share": 0.045986992312460985
+        },
+        {
+          "value": "18",
+          "count": 85106,
+          "share": 0.045957831936875346
+        },
+        {
+          "value": "19",
+          "count": 85054,
+          "share": 0.04592975157520029
+        },
+        {
+          "value": "14",
+          "count": 84971,
+          "share": 0.04588493099791125
+        },
+        {
+          "value": "43",
+          "count": 12,
+          "share": 6.480083463475009e-06
+        }
+      ],
+      "target_by_value": [
+        {
+          "value": "1",
+          "students": 97138,
+          "target_rate": 0.5960077415635487
+        },
+        {
+          "value": "10",
+          "students": 85391,
+          "target_rate": 0.6028387066552682
+        },
+        {
+          "value": "11",
+          "students": 85200,
+          "target_rate": 0.5980985915492958
+        },
+        {
+          "value": "12",
+          "students": 85278,
+          "target_rate": 0.6046459813785502
+        },
+        {
+          "value": "13",
+          "students": 85242,
+          "target_rate": 0.6042913117946552
+        },
+        {
+          "value": "14",
+          "students": 84971,
+          "target_rate": 0.6022289957750291
+        },
+        {
+          "value": "15",
+          "students": 86462,
+          "target_rate": 0.5909416853646688
+        },
+        {
+          "value": "16",
+          "students": 85207,
+          "target_rate": 0.5970166770335771
+        },
+        {
+          "value": "17",
+          "students": 85194,
+          "target_rate": 0.5923069699744113
+        },
+        {
+          "value": "18",
+          "students": 85106,
+          "target_rate": 0.5872793927572674
+        },
+        {
+          "value": "19",
+          "students": 85054,
+          "target_rate": 0.5972558609824347
+        },
+        {
+          "value": "2",
+          "students": 93301,
+          "target_rate": 0.5933269739874171
+        },
+        {
+          "value": "20",
+          "students": 85437,
+          "target_rate": 0.5913480108149864
+        },
+        {
+          "value": "21",
+          "students": 85160,
+          "target_rate": 0.5991662752465946
+        },
+        {
+          "value": "3",
+          "students": 93366,
+          "target_rate": 0.5940706467022256
+        },
+        {
+          "value": "4",
+          "students": 93242,
+          "target_rate": 0.5994401664485961
+        },
+        {
+          "value": "43",
+          "students": 12,
+          "target_rate": 0.5
+        },
+        {
+          "value": "5",
+          "students": 93351,
+          "target_rate": 0.6024145429615109
+        },
+        {
+          "value": "6",
+          "students": 93049,
+          "target_rate": 0.6007479929929392
+        },
+        {
+          "value": "7",
+          "students": 93064,
+          "target_rate": 0.5998452677727155
+        },
+        {
+          "value": "8",
+          "students": 86290,
+          "target_rate": 0.6044037547803917
+        },
+        {
+          "value": "9",
+          "students": 85313,
+          "target_rate": 0.5970719585526238
+        }
+      ]
+    },
+    "presenca": {
+      "cardinality_including_na": 1,
+      "constant": true,
+      "values": [
+        {
+          "value": "Presente",
+          "count": 1851828,
+          "share": 1.0
+        }
+      ],
+      "target_by_value": [
+        {
+          "value": "Presente",
+          "students": 1851828,
+          "target_rate": 0.5978433202219645
+        }
+      ]
+    },
+    "preenchimento_caderno": {
+      "cardinality_including_na": 1,
+      "constant": true,
+      "values": [
+        {
+          "value": "Prova preenchida",
+          "count": 1851828,
+          "share": 1.0
+        }
+      ],
+      "target_by_value": [
+        {
+          "value": "Prova preenchida",
+          "students": 1851828,
+          "target_rate": 0.5978433202219645
+        }
+      ]
+    }
+  },
+  "proficiency": {
+    "threshold": 743.0,
+    "rows": 1851828,
+    "complete_rows": 1851828,
+    "missing": 0,
+    "by_target_quantiles": {
+      "0": {
+        "0.0": 593.8800048828125,
+        "0.01": 621.1199951171875,
+        "0.25": 682.5700073242188,
+        "0.5": 709.7706298828125,
+        "0.75": 729.4299926757812,
+        "0.99": 742.510009765625,
+        "1.0": 742.9996337890625
+      },
+      "1": {
+        "0.0": 743.0,
+        "0.01": 743.72998046875,
+        "0.25": 759.3599853515625,
+        "0.5": 774.8099975585938,
+        "0.75": 794.7100219726562,
+        "0.99": 856.72998046875,
+        "1.0": 900.8900146484375
+      }
+    },
+    "correlation_with_binary_target": 0.7988981225032115,
+    "threshold_accuracy": 1.0,
+    "threshold_mismatches": 0,
+    "threshold_reconstruction_share_all_rows": 1.0,
+    "target_1_below_threshold": 0,
+    "target_0_at_or_above_threshold": 0,
+    "minimum_target_1": 743.0,
+    "maximum_target_0": 742.9996337890625
+  },
+  "school_sources_in_phase2": {
+    "attribute_table_found": false,
+    "available_key": "id_escola somente em alunos/alunos_integrado",
+    "tables": [
+      "alunos",
+      "municipio",
+      "uf",
+      "meta_municipio",
+      "meta_uf",
+      "meta_brasil",
+      "atlas_uf"
+    ]
+  },
+  "phase2_source_inventory": [
+    {
+      "source": "alunos",
+      "location": "Silver/S3",
+      "granularity": "ano + id_aluno",
+      "keys": [
+        "ano",
+        "id_aluno"
+      ],
+      "years": "2023-2024",
+      "useful": [
+        "serie",
+        "caderno",
+        "peso_aluno",
+        "id_escola"
+      ],
+      "leakage": "proficiencia/alfabetizado são resultados",
+      "integration_cost": "baixo"
+    },
+    {
+      "source": "alunos_integrado",
+      "location": "Silver/S3",
+      "granularity": "aluno",
+      "keys": [
+        "ano",
+        "id_aluno"
+      ],
+      "years": "2023-2024",
+      "useful": [
+        "contexto municipal agregado"
+      ],
+      "leakage": "alto para agregados contemporâneos",
+      "integration_cost": "baixo"
+    },
+    {
+      "source": "municipio",
+      "location": "Silver/S3",
+      "granularity": "ano + município + rede",
+      "keys": [
+        "ano",
+        "id_municipio",
+        "rede"
+      ],
+      "years": "2023-2024",
+      "useful": [
+        "taxa",
+        "Português",
+        "níveis"
+      ],
+      "leakage": "usar somente histórico",
+      "integration_cost": "baixo"
+    },
+    {
+      "source": "uf/atlas_uf",
+      "location": "Silver/S3",
+      "granularity": "ano + UF + rede / UF",
+      "keys": [
+        "ano",
+        "sigla_uf",
+        "rede"
+      ],
+      "years": "histórico disponível",
+      "useful": [
+        "indicadores educacionais",
+        "IDHM"
+      ],
+      "leakage": "baixo se histórico",
+      "integration_cost": "baixo"
+    },
+    {
+      "source": "metas",
+      "location": "Silver/S3",
+      "granularity": "município, UF ou Brasil",
+      "keys": [
+        "localidade",
+        "ano"
+      ],
+      "years": "2024-2030",
+      "useful": [
+        "metas",
+        "participação"
+      ],
+      "leakage": "avaliar temporalidade de campos realizados",
+      "integration_cost": "baixo"
+    },
+    {
+      "source": "Gold existente",
+      "location": "Gold/S3",
+      "granularity": "município+rede/UF/Brasil",
+      "keys": [
+        "localidade",
+        "rede",
+        "ano"
+      ],
+      "years": "2023-2024",
+      "useful": [
+        "features oficiais atuais"
+      ],
+      "leakage": "controlado pelo recorte histórico",
+      "integration_cost": "já integrado"
+    }
+  ],
+  "test_accessed": false,
+  "model_retrained": false
+}

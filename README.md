@@ -4,7 +4,7 @@
 
 Projeto desenvolvido durante a **Fase 3 da Pós-Tech Data & AI Scientist**, com foco na aplicação de técnicas de Machine Learning para predição da alfabetização individual a partir de dados educacionais, territoriais e socioeconômicos.
 
-> **Status:** Em desenvolvimento — preparação dos dados e Análise Exploratória de Dados (EDA) concluídas. Modelagem supervisionada em desenvolvimento.
+> **Status:** fluxo de dados, modelagem supervisionada, avaliação territorial, auditorias metodológicas e clustering municipal concluídos.
 
 ---
 
@@ -123,6 +123,33 @@ data/processed/modeling_dataset_2024_gold.parquet
 
 O arquivo não é versionado no GitHub por representar um artefato derivado de grande volume que pode ser reproduzido a partir do pipeline do projeto.
 
+O contrato e as regras de validação estão em
+[Definição do dataset Gold](reports/modeling_dataset_definition.md).
+O fluxo oficial combina a população individual da Silver da Fase 2
+(partição `2026-07-09`) com as features Gold (partição `2026-07-10`).
+Usa somente AWS/S3, com credenciais em `.env` ou `env` na raiz:
+
+```bash
+python -m src.preprocessing.gold_pipeline
+```
+
+A população é filtrada para 2024, presença, prova preenchida e redes
+Estadual/Municipal. O arquivo `modeling_dataset_2024.parquet` e o pipeline
+BigQuery são legados opcionais e não são necessários nesse fluxo.
+
+Para validar o parquet já disponível localmente, sem acessar as fontes:
+
+```bash
+python -m src.preprocessing.validate_dataset
+```
+
+Os testes sintéticos independem de credenciais e do parquet:
+
+```bash
+python -m tests.test_dataset_contract
+```
+
+
 ---
 
 ## Features disponíveis
@@ -158,9 +185,9 @@ As features candidatas à modelagem incluem diferentes dimensões.
 
 ### Variáveis auxiliares
 
-Identificadores como `id_aluno`, `id_escola`, `id_municipio` e nomes geográficos são preservados para rastreabilidade e análises, mas não serão utilizados diretamente como features preditivas.
+Identificadores como `id_aluno`, `id_escola`, `id_municipio` e nomes geográficos são preservados para rastreabilidade e análises, mas não entram como features preditivas.
 
-A variável `peso_aluno`, relacionada à ponderação amostral, também não será utilizada inicialmente como feature. Seu possível uso como `sample_weight` será avaliado durante a modelagem.
+A variável `peso_aluno`, relacionada à ponderação amostral, também não entra como feature.
 
 ---
 
@@ -226,7 +253,7 @@ Os resultados sugerem que o contexto territorial pode contribuir para a capacida
 
 Os indicadores de IDHM apresentaram associações individuais mais moderadas com o target.
 
-Como essas informações possuem granularidade estadual, os mesmos valores são compartilhados por grande número de alunos. Sua contribuição será avaliada principalmente em combinação com as demais características do dataset.
+Como essas informações possuem granularidade estadual, os mesmos valores são compartilhados por grande número de alunos. Sua contribuição foi avaliada em combinação com as demais características do dataset.
 
 ---
 
@@ -242,7 +269,7 @@ As principais taxas observadas foram:
 
 Nenhuma imputação foi realizada durante a EDA.
 
-O tratamento será realizado diretamente no **pipeline de Machine Learning**, permitindo que os parâmetros de imputação sejam aprendidos exclusivamente a partir do conjunto de treinamento e evitando vazamento de informações entre treino, validação e teste.
+O tratamento ocorre diretamente no **pipeline de Machine Learning**, permitindo que os parâmetros de imputação sejam aprendidos exclusivamente a partir do conjunto de treinamento e evitando vazamento de informações entre treino, validação e teste.
 
 ---
 
@@ -272,7 +299,7 @@ Os principais casos encontrados foram:
 - `idhm` × `idhm_renda`: aproximadamente **0,957**;
 - `idhm` × `idhm_educacao`: aproximadamente **0,926**.
 
-A seleção final das features será avaliada de acordo com o algoritmo utilizado, desempenho, capacidade de generalização e interpretabilidade.
+A seleção final considerou o algoritmo, desempenho, capacidade de generalização e interpretabilidade.
 
 ---
 
@@ -304,7 +331,7 @@ meta_alfabetizacao_municipio_2024
 
 A validação apresentou correspondência de **100%** para a condição de atingimento da meta.
 
-Dessa forma, essas variáveis não utilizam o resultado individual observado em 2024. Entretanto, por serem derivadas de outras features, sua redundância será considerada durante a seleção de variáveis.
+Dessa forma, essas variáveis não utilizam o resultado individual observado em 2024. A seleção considerou sua redundância com outras features.
 
 ---
 
@@ -354,19 +381,19 @@ O desenvolvimento do projeto está organizado nas seguintes etapas:
 - [x] Auditoria de data leakage
 - [x] Definição das hipóteses iniciais de modelagem
 
-### Em desenvolvimento
+### Etapas finais
 
-- [ ] Estratégia de separação treino/validação/teste
-- [ ] Pipeline de pré-processamento
-- [ ] Modelo baseline
-- [ ] Comparação de modelos supervisionados
-- [ ] Otimização de hiperparâmetros
-- [ ] Avaliação de generalização e overfitting
-- [ ] Seleção do modelo final
-- [ ] Interpretabilidade e explicabilidade
-- [ ] Feature Importance / SHAP
-- [ ] Insights orientados às perguntas de negócio
-- [ ] Documentação técnica final
+- [x] Estratégia de separação treino/validação/teste por município
+- [x] Pipeline de pré-processamento
+- [x] Modelos baseline (Dummy, regressão logística e árvore)
+- [x] Comparação inicial de modelos supervisionados
+- [x] Seleção controlada de hiperparâmetros na validação
+- [x] Avaliação inicial de generalização e overfitting
+- [x] Seleção do modelo final
+- [x] Interpretabilidade inicial por Feature Importance
+- [ ] SHAP (adiado por custo computacional)
+- [x] Análise municipal diagnóstica na validação
+- [x] Documentação técnica final
 - [ ] Apresentação e vídeo executivo
 
 ---
@@ -414,69 +441,74 @@ tech-challenge-fase3/
 
 ## Modelagem
 
-A etapa de modelagem será estruturada como um problema de classificação binária supervisionada.
+X, y, groups e a divisão municipal estão definidos em
+[Definição do split](reports/modeling_split_definition.md). O comando
+`python -m src.modeling.split` reproduz a divisão do parquet local,
+sem treinamento ou pré-processamento aprendido.
 
-O pré-processamento será incorporado diretamente ao pipeline de Machine Learning, incluindo:
+O problema foi tratado como classificação binária supervisionada. Das 16
+features brutas, o pré-processamento integrado ao `sklearn Pipeline` produz 43
+colunas. Ele inclui:
 
 - imputação de valores numéricos ausentes;
 - tratamento das variáveis categóricas;
 - encoding;
-- eventuais transformações numéricas;
-- seleção de features;
+- transformações numéricas;
 - treinamento do estimador.
 
-Serão avaliados modelos baseline e algoritmos supervisionados mais robustos, com comparação baseada em desempenho, capacidade de generalização e interpretabilidade.
+Foram comparados Dummy, regressão logística, árvore de decisão e Random Forest.
+O modelo final é uma Random Forest controlada com `n_estimators=40`,
+`max_depth=10`, `min_samples_leaf=200`, `max_features="sqrt"`, `n_jobs=2` e
+`random_state=42`. A seleção usou somente treino e validação; a ROC AUC de
+validação foi 0,6409.
 
-A estratégia completa será documentada conforme os experimentos forem executados.
+O protocolo e os resultados estão em
+[Protocolo do modelo final](reports/final_model_protocol.md) e
+[Resultados de validação](reports/final_validation_results.md).
+As restrições de interpretação e generalização estão em
+[Limitações da modelagem](reports/modeling_limitations.md).
+O diagnóstico entre target individual e features contextuais está em
+[Auditoria de granularidade](reports/granularity_audit.md).
+A linhagem do target, o risco de `proficiencia` e as candidatas futuras estão em
+[Auditoria da linhagem](reports/target_lineage_audit.md) e
+[Auditoria de candidatas](reports/feature_candidate_audit.md).
+
+```bash
+python -m src.modeling.modeling_eda
+python -m src.modeling.train_baselines
+python -m src.modeling.final_validation
+```
+
+Esses comandos trabalham com treino e validação. O artefato `.joblib` não é
+versionado e é regenerado pelo treinamento/validação. A avaliação final não deve
+ser repetida, pois o teste já foi aberto uma única vez.
 
 ---
 
 ## Avaliação
 
-Os dados serão separados em conjuntos independentes de treinamento, validação e teste.
-
-As métricas serão selecionadas considerando a natureza do problema de classificação e o impacto dos diferentes tipos de erro.
-
-Além do desempenho global, serão avaliados:
-
-- capacidade de generalização;
-- diferença entre treino e validação;
-- possíveis sinais de overfitting;
-- desempenho por classe;
-- matriz de confusão;
-- estabilidade das previsões.
-
-As métricas definitivas serão documentadas durante a etapa de modelagem.
+O split agrupado por município contém 1.311.003 alunos no treino, 297.079 na
+validação e 243.746 no teste, sem sobreposição de municípios. A seleção utilizou
+ROC AUC, balanced accuracy, precision, recall e F1 por classe. Não existe limiar
+operacional congelado; 0,50 aparece somente como referência descritiva.
 
 ---
 
 ## Interpretabilidade
 
-Após a seleção do modelo final, serão utilizadas técnicas de interpretabilidade para compreender os fatores mais relevantes nas previsões.
-
-Entre as técnicas previstas estão:
-
-- Feature Importance;
-- análise de importância das variáveis;
-- SHAP, quando compatível com o modelo selecionado.
-
-A interpretação será utilizada tanto para compreensão técnica do modelo quanto para geração de insights relacionados ao problema educacional.
+Foi registrada a importância das features da Random Forest. SHAP não foi
+executado devido ao custo computacional e não é requisito para reproduzir os
+resultados. A auditoria mostrou que a proficiência individual reconstrói o target
+com corte 743; ela foi excluída por leakage direto.
 
 ---
 
 ## Insights e aplicação em políticas públicas
 
-Os resultados serão analisados sob a perspectiva de apoio à tomada de decisão.
-
-Entre as questões que serão investigadas estão:
-
-- quais fatores apresentam maior associação com alfabetização;
-- quais contextos territoriais apresentam maior risco;
-- quais municípios ou regiões possuem características semelhantes;
-- quais fatores mais influenciam as previsões;
-- quais contextos apresentam maior risco de não atingir metas educacionais.
-
-Os resultados serão apresentados como suporte analítico e não como evidência causal.
+O score `prob_risco = 1 - P(alfabetizado)` permite ordenar territórios para
+diagnóstico e priorização de investigação. Ele pode apoiar alocação de suporte,
+monitoramento e estudos locais, sem substituir avaliação pedagógica individual
+nem sustentar conclusões causais.
 
 ---
 
@@ -491,7 +523,48 @@ Algumas limitações já identificadas incluem:
 - associações encontradas não representam necessariamente relações causais;
 - a capacidade de generalização dependerá da estratégia de validação e da representatividade dos dados disponíveis.
 
-Novas limitações serão documentadas conforme a modelagem avançar.
+Alunos do mesmo município e rede compartilham predominantemente o mesmo vetor
+de features, e cerca de 90% da variabilidade do target ocorre dentro desses
+contextos. O modelo representa sobretudo risco contextual/territorial e não é
+diagnóstico individual. A POC com Censo Escolar teve cobertura zero ao juntar
+`id_escola` e `CO_ENTIDADE`, indicando chave anonimizada ou recodificada; por
+isso, essa fonte externa permitida não foi incorporada ao modelo final.
+
+---
+
+## Avaliação final em municípios inéditos
+
+Após o congelamento e a aprovação do protocolo, o conjunto de teste foi aberto
+uma única vez. Aplicou-se a Random Forest já ajustada somente no treino, com 40
+árvores, profundidade 10, folha mínima 200, `max_features="sqrt"` e semente 42.
+Não houve refit, retuning ou alteração de features após a abertura.
+
+O teste contém 243.746 alunos de 828 municípios ausentes do treino e da
+validação. A ROC AUC foi 0,6631, contra 0,6409 na validação. No limiar 0,50,
+usado apenas como referência descritiva, a balanced accuracy foi 0,5832; para a
+classe de risco, precision/recall/F1 foram 0,5609/0,3426/0,4254.
+
+Não foi congelado threshold operacional. A análise territorial ordena
+municípios e redes por `prob_risco = 1 - P(alfabetizado)`. O ranking indica risco
+relativo no conjunto de atributos contextuais e não constitui diagnóstico
+individual nem previsão oficial de cumprimento de metas. Resultados completos:
+`reports/final_test_results.md` e `reports/final_test_metrics.json`.
+
+---
+
+## Perfis territoriais por clustering
+
+Uma análise complementar de K-means agrupou os 5.517 municípios usando taxa de
+alfabetização 2023, média de Português, participação, meta 2024 e IDHM. Os dados
+municipais foram imputados por mediana e padronizados; nenhum target, ID, rede,
+UF ou score supervisionado entrou no treinamento.
+
+Foram avaliados `k=2..6`. `k=2` foi escolhido com Silhouette amostral 0,3591 e
+separou 3.371 municípios de contexto educacional e socioeconômico relativamente
+mais favorável de 2.146 municípios com maior vulnerabilidade relativa. O segundo
+perfil apresentou probabilidade média de risco pós-hoc de 0,4890, contra 0,2936
+no primeiro. O resultado apoia priorização territorial e não tem interpretação
+causal. Detalhes: `reports/municipal_clustering_results.md`.
 
 ---
 
@@ -501,17 +574,29 @@ O projeto foi estruturado para permitir reprodução das principais etapas por m
 
 Os arquivos derivados de grande volume, incluindo o dataset final de modelagem, não são versionados diretamente no GitHub.
 
-Para reproduzir o projeto é necessário:
+No Windows, crie o ambiente e instale as dependências:
 
-1. Python compatível com o ambiente do projeto;
-2. dependências instaladas a partir de `requirements.txt`;
-3. acesso autorizado às fontes de dados necessárias;
-4. configuração das credenciais por meio de variáveis de ambiente;
-5. execução das etapas de integração e preparação descritas no projeto.
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-Credenciais e arquivos `.env` **não devem ser versionados no repositório**.
+Crie o arquivo local `env` com `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`, `AWS_REGION` e `S3_BUCKET_NAME`, sem versioná-lo. O
+fluxo oficial usa a Silver e a Gold no S3 e não requer GCP:
 
-As instruções de reprodução serão refinadas conforme a pipeline de modelagem for consolidada.
+```powershell
+python -m src.preprocessing.gold_pipeline
+python -m src.preprocessing.validate_dataset
+python -m src.modeling.modeling_eda
+python -m src.modeling.train_baselines
+python -m src.modeling.final_validation
+python -m src.modeling.municipal_clustering
+```
+
+O código de BigQuery/Base dos Dados permanece como caminho legado e opcional.
+Não execute novamente `src.modeling.final_test_evaluation`.
 
 ---
 
@@ -540,8 +625,10 @@ O projeto utiliza principalmente:
 - Jupyter Notebook;
 - Parquet;
 - Amazon S3;
-- Google BigQuery;
+- Google BigQuery/Base dos Dados (legado opcional);
 - Git;
 - GitHub.
 
-Outras bibliotecas serão incorporadas conforme as etapas de modelagem, otimização e interpretabilidade forem desenvolvidas.
+Os próximos passos reais são preparar a apresentação e o vídeo executivo,
+avaliar novas fontes com chaves compatíveis e monitorar estabilidade em ciclos
+futuros.

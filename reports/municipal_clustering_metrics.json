@@ -1,0 +1,300 @@
+{
+  "unit": "município",
+  "municipalities_before_imputation": 5517,
+  "municipalities_after_imputation": 5517,
+  "candidates": [
+    "taxa_alfabetizacao_municipio_2023",
+    "media_portugues_municipio_2023",
+    "percentual_participacao_municipio_2023",
+    "meta_alfabetizacao_municipio_2024",
+    "gap_para_meta_municipio_2024",
+    "idhm",
+    "idhm_educacao",
+    "idhm_renda",
+    "idhm_longevidade",
+    "total_alunos_municipio_2023"
+  ],
+  "features": [
+    "taxa_alfabetizacao_municipio_2023",
+    "media_portugues_municipio_2023",
+    "percentual_participacao_municipio_2023",
+    "meta_alfabetizacao_municipio_2024",
+    "idhm"
+  ],
+  "removed": {
+    "gap_para_meta_municipio_2024": "derivada de meta - taxa",
+    "idhm_educacao; idhm_renda; idhm_longevidade": "redundância com IDHM agregado",
+    "total_alunos_municipio_2023": "assimetria forte e efeito de porte",
+    "pct_alfabetizados_municipio_2023": "equivalente à taxa histórica",
+    "proficiencia_media_ponderada_2023": "equivalente à média de Português"
+  },
+  "missing_before_imputation": {
+    "taxa_alfabetizacao_municipio_2023": 43,
+    "media_portugues_municipio_2023": 43,
+    "percentual_participacao_municipio_2023": 285,
+    "meta_alfabetizacao_municipio_2024": 285,
+    "idhm": 43
+  },
+  "imputation": "mediana por feature",
+  "scaling": "StandardScaler",
+  "aggregation": {
+    "taxa_alfabetizacao_municipio_2023": {
+      "municipalities_with_more_than_one_value": 953,
+      "aggregation": "média ponderada pelo número de alunos (média das linhas individuais)"
+    },
+    "media_portugues_municipio_2023": {
+      "municipalities_with_more_than_one_value": 954,
+      "aggregation": "média ponderada pelo número de alunos (média das linhas individuais)"
+    },
+    "percentual_participacao_municipio_2023": {
+      "municipalities_with_more_than_one_value": 0,
+      "aggregation": "média ponderada pelo número de alunos (média das linhas individuais)"
+    },
+    "meta_alfabetizacao_municipio_2024": {
+      "municipalities_with_more_than_one_value": 0,
+      "aggregation": "média ponderada pelo número de alunos (média das linhas individuais)"
+    },
+    "gap_para_meta_municipio_2024": {
+      "municipalities_with_more_than_one_value": 884,
+      "aggregation": "média ponderada pelo número de alunos (média das linhas individuais)"
+    },
+    "idhm": {
+      "municipalities_with_more_than_one_value": 0,
+      "aggregation": "média ponderada pelo número de alunos (média das linhas individuais)"
+    },
+    "idhm_educacao": {
+      "municipalities_with_more_than_one_value": 0,
+      "aggregation": "média ponderada pelo número de alunos (média das linhas individuais)"
+    },
+    "idhm_renda": {
+      "municipalities_with_more_than_one_value": 0,
+      "aggregation": "média ponderada pelo número de alunos (média das linhas individuais)"
+    },
+    "idhm_longevidade": {
+      "municipalities_with_more_than_one_value": 0,
+      "aggregation": "média ponderada pelo número de alunos (média das linhas individuais)"
+    },
+    "total_alunos_municipio_2023": {
+      "municipalities_with_more_than_one_value": 869,
+      "aggregation": "média ponderada pelo número de alunos (média das linhas individuais)"
+    }
+  },
+  "k_metrics": [
+    {
+      "k": 2,
+      "silhouette": 0.35912913732687274,
+      "silhouette_sample_size": 3000,
+      "inertia": 16149.453461131385,
+      "min_cluster_size": 2146,
+      "min_cluster_share": 0.3889795178539061
+    },
+    {
+      "k": 3,
+      "silhouette": 0.2869749713966184,
+      "silhouette_sample_size": 3000,
+      "inertia": 12446.640070139121,
+      "min_cluster_size": 1597,
+      "min_cluster_share": 0.2894689142649991
+    },
+    {
+      "k": 4,
+      "silhouette": 0.2806084895803087,
+      "silhouette_sample_size": 3000,
+      "inertia": 10626.754987216986,
+      "min_cluster_size": 868,
+      "min_cluster_share": 0.15733188326989306
+    },
+    {
+      "k": 5,
+      "silhouette": 0.2840041862845236,
+      "silhouette_sample_size": 3000,
+      "inertia": 9125.031630736417,
+      "min_cluster_size": 833,
+      "min_cluster_share": 0.1509878557186877
+    },
+    {
+      "k": 6,
+      "silhouette": 0.2940289130945163,
+      "silhouette_sample_size": 3000,
+      "inertia": 7811.042642581898,
+      "min_cluster_size": 528,
+      "min_cluster_share": 0.0957041870581838
+    }
+  ],
+  "selected_k": 2,
+  "selection_rule": "silhouette amostral principal (até 3.000, seed 42); solução dentro de 0,02 do melhor, sem cluster <3%, preferindo menor k",
+  "profiles": [
+    {
+      "cluster": 0,
+      "municipios": 3371,
+      "percentual_municipios": 0.611020482146094,
+      "principais_ufs": "MG; SP; RS; PR; SC",
+      "media_taxa_alfabetizacao_municipio_2023": 72.93203735351562,
+      "mediana_taxa_alfabetizacao_municipio_2023": 71.88999938964844,
+      "centroide_taxa_alfabetizacao_municipio_2023": 72.77389830004418,
+      "z_taxa_alfabetizacao_municipio_2023": 0.6270526063821301,
+      "media_media_portugues_municipio_2023": 764.5228881835938,
+      "mediana_media_portugues_municipio_2023": 760.16357421875,
+      "centroide_media_portugues_municipio_2023": 764.3243299056627,
+      "z_media_portugues_municipio_2023": 0.5645733135996188,
+      "media_percentual_participacao_municipio_2023": 91.14424133300781,
+      "mediana_percentual_participacao_municipio_2023": 91.68499755859375,
+      "centroide_percentual_participacao_municipio_2023": 91.1108928320671,
+      "z_percentual_participacao_municipio_2023": 0.2087697911662191,
+      "media_meta_alfabetizacao_municipio_2024": 72.02088165283203,
+      "mediana_meta_alfabetizacao_municipio_2024": 73.35499572753906,
+      "centroide_meta_alfabetizacao_municipio_2024": 71.55243905045951,
+      "z_meta_alfabetizacao_municipio_2024": 0.6323332533062656,
+      "media_idhm": 0.80227734375,
+      "mediana_idhm": 0.806,
+      "centroide_idhm": 0.8022965599051007,
+      "z_idhm": 0.4039457636045541,
+      "perfil_interpretativo": "melhor contexto educacional e socioeconômico relativo",
+      "municipios_com_resultado_final": 480.0,
+      "alunos": 112439.0,
+      "probabilidade_media_risco_ponderada": 0.2936036979427938,
+      "taxa_observada_alfabetizacao_ponderada": 0.7032257490728306
+    },
+    {
+      "cluster": 1,
+      "municipios": 2146,
+      "percentual_municipios": 0.3889795178539061,
+      "principais_ufs": "BA; MG; RN; PB; PA",
+      "media_taxa_alfabetizacao_municipio_2023": 41.4546012878418,
+      "mediana_taxa_alfabetizacao_municipio_2023": 42.83000183105469,
+      "centroide_taxa_alfabetizacao_municipio_2023": 41.45122943735902,
+      "z_taxa_alfabetizacao_municipio_2023": -0.9857442371657541,
+      "media_media_portugues_municipio_2023": 729.5587158203125,
+      "mediana_media_portugues_municipio_2023": 731.37060546875,
+      "centroide_media_portugues_municipio_2023": 729.5561391692618,
+      "z_media_portugues_municipio_2023": -0.8875250412391211,
+      "media_percentual_participacao_municipio_2023": 87.7634506225586,
+      "mediana_percentual_participacao_municipio_2023": 88.52499389648438,
+      "centroide_percentual_participacao_municipio_2023": 87.87537541600652,
+      "z_percentual_participacao_municipio_2023": -0.3281919514277345,
+      "media_meta_alfabetizacao_municipio_2024": 46.93082809448242,
+      "mediana_meta_alfabetizacao_municipio_2024": 48.52000045776367,
+      "centroide_meta_alfabetizacao_municipio_2024": 47.63178539698494,
+      "z_meta_alfabetizacao_municipio_2024": -0.9940455618408987,
+      "media_idhm": 0.7700498602050326,
+      "mediana_idhm": 0.761,
+      "centroide_idhm": 0.7700191142191144,
+      "z_idhm": -0.6350140395685568,
+      "perfil_interpretativo": "maior vulnerabilidade educacional relativa",
+      "municipios_com_resultado_final": 348.0,
+      "alunos": 131307.0,
+      "probabilidade_media_risco_ponderada": 0.4889874246649821,
+      "taxa_observada_alfabetizacao_ponderada": 0.5183653575209243
+    }
+  ],
+  "representatives": {
+    "0": [
+      {
+        "id_municipio_nome": "Coqueiral",
+        "sigla_uf": "MG",
+        "distancia_centroide": 0.12017364605708837
+      },
+      {
+        "id_municipio_nome": "Espera Feliz",
+        "sigla_uf": "MG",
+        "distancia_centroide": 0.12708473874899257
+      },
+      {
+        "id_municipio_nome": "Resplendor",
+        "sigla_uf": "MG",
+        "distancia_centroide": 0.14534459284250906
+      },
+      {
+        "id_municipio_nome": "Rio Manso",
+        "sigla_uf": "MG",
+        "distancia_centroide": 0.1533777648762168
+      },
+      {
+        "id_municipio_nome": "Patos de Minas",
+        "sigla_uf": "MG",
+        "distancia_centroide": 0.16354034955477686
+      }
+    ],
+    "1": [
+      {
+        "id_municipio_nome": "Galinhos",
+        "sigla_uf": "RN",
+        "distancia_centroide": 0.34487412166077525
+      },
+      {
+        "id_municipio_nome": "São Miguel",
+        "sigla_uf": "RN",
+        "distancia_centroide": 0.36914029295077466
+      },
+      {
+        "id_municipio_nome": "Tenente Laurentino Cruz",
+        "sigla_uf": "RN",
+        "distancia_centroide": 0.3820965360367929
+      },
+      {
+        "id_municipio_nome": "Pendências",
+        "sigla_uf": "RN",
+        "distancia_centroide": 0.4054485529883233
+      },
+      {
+        "id_municipio_nome": "Batalha",
+        "sigla_uf": "PI",
+        "distancia_centroide": 0.4483089982668608
+      }
+    ]
+  },
+  "stability": [
+    {
+      "random_state": 7,
+      "adjusted_rand_vs_seed_42": 0.9992732082387544,
+      "cluster_sizes": {
+        "0": 2145,
+        "1": 3372
+      }
+    },
+    {
+      "random_state": 21,
+      "adjusted_rand_vs_seed_42": 0.9992732197653288,
+      "cluster_sizes": {
+        "0": 3370,
+        "1": 2147
+      }
+    },
+    {
+      "random_state": 42,
+      "adjusted_rand_vs_seed_42": 1.0,
+      "cluster_sizes": {
+        "0": 3371,
+        "1": 2146
+      }
+    },
+    {
+      "random_state": 84,
+      "adjusted_rand_vs_seed_42": 0.9970943446761319,
+      "cluster_sizes": {
+        "0": 3375,
+        "1": 2142
+      }
+    },
+    {
+      "random_state": 123,
+      "adjusted_rand_vs_seed_42": 0.997820484300587,
+      "cluster_sizes": {
+        "0": 3368,
+        "1": 2149
+      }
+    }
+  ],
+  "pca": {
+    "use": "visualização apenas; clusters definidos no espaço padronizado completo",
+    "explained_variance_ratio": [
+      0.6200484885734775,
+      0.20171814849248673
+    ],
+    "explained_variance_total": 0.8217666370659642
+  },
+  "supervised_model_changed": false,
+  "second_test_evaluation": false,
+  "dataset_sha256": "54b56a25e86b6c4c99e721ae6fd00c0d3c8130f7cdaaeaf1b7f2f434f97065e6",
+  "model_sha256": "584755eef1aefb8be8af88fafd07518b299cfa488d5143852c8a30dfaf539710"
+}

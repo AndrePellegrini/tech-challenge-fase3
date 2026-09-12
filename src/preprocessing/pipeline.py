@@ -10,8 +10,6 @@ from src.preprocessing.queries import (
 )
 
 
-PROJECT_ID = "projeto-fiap-grupo-x"
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 OUTPUT_PATH = (
@@ -104,7 +102,6 @@ def main():
     print("\n1. Consultando alunos de 2024...")
     alunos_2024 = run_query(
         query=QUERY_ALUNOS_2024,
-        project_id=PROJECT_ID,
     )
 
     print(
@@ -115,7 +112,6 @@ def main():
     print("\n2. Consultando histórico municipal de 2023...")
     municipio_2023 = run_query(
         query=QUERY_MUNICIPIO_2023,
-        project_id=PROJECT_ID,
     )
 
     print(

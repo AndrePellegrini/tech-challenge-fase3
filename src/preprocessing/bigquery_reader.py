@@ -1,36 +1,33 @@
 from __future__ import annotations
 
+import os
+from pathlib import Path
+
+import basedosdados as bd
 import pandas as pd
-from google.cloud import bigquery
+from dotenv import load_dotenv
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def run_query(
     query: str,
-    project_id: str,
+    project_id: str | None = None,
 ) -> pd.DataFrame:
+    """Executa SQL pela Base dos Dados, seguindo o acesso usado na Fase 2.
+
+    O project_id explícito continua aceito por compatibilidade. Quando
+    omitido, usa BILLING_PROJECT_ID do ambiente, .env ou env da raiz.
+    Credenciais e autenticação são gerenciadas pela biblioteca basedosdados.
     """
-    Executa uma consulta SQL no Google BigQuery
-    e retorna o resultado como DataFrame.
+    load_dotenv(PROJECT_ROOT / ".env", override=False)
+    load_dotenv(PROJECT_ROOT / "env", override=False)
+    billing_project_id = project_id if project_id is not None else os.getenv("BILLING_PROJECT_ID")
+    if not billing_project_id or not billing_project_id.strip():
+        raise ValueError("Configure BILLING_PROJECT_ID no ambiente ou no arquivo env da raiz.")
 
-    Parameters
-    ----------
-    query : str
-        Consulta SQL a ser executada.
-
-    project_id : str
-        ID do projeto Google Cloud utilizado
-        para execução e faturamento da consulta.
-
-    Returns
-    -------
-    pd.DataFrame
-        Resultado da consulta.
-    """
-
-    client = bigquery.Client(project=project_id)
-
-    query_job = client.query(query)
-
-    dataframe = query_job.to_dataframe()
-
-    return dataframe
+    return bd.read_sql(
+        query=query,
+        billing_project_id=billing_project_id,
+    )

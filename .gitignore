@@ -37,8 +37,11 @@ env/
 
 .env
 .env.*
+env
 *.pem
 *.key
+credentials*.json
+service-account*.json
 
 
 # ============================================================
@@ -72,6 +75,10 @@ Thumbs.db
 
 *.tmp
 *.log
+tmp/
+.cache/
+microdados_censo_escolar_*
+*.zip
 
 
 # ============================================================
@@ -87,3 +94,36 @@ data/gold/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/gold/.gitkeep
+
+# Regenerable outputs excluded from the final curation
+reports/baseline_model_comparison.csv
+reports/baseline_results.json
+reports/feature_importance.csv
+reports/municipal_validation_analysis.csv
+reports/final_municipal_validation_analysis.csv
+reports/shap_summary.json
+reports/municipal_cluster_assignments.csv
+reports/censo_escolar_feature_inventory.csv
+reports/censo_escolar_granularity_comparison.json
+reports/feature_candidate_matrix.csv
+reports/modeling_eda_summary.json
+reports/modeling_results.md
+reports/modeling_split_summary.json
+images/modeling/04_target_by_uf.png
+images/modeling/05_target_by_feature_quantiles.png
+images/modeling/06_baseline_comparison.png
+images/modeling/07_feature_importance.png
+images/modeling/censo_escolar_poc/02_students_per_school.png
+images/modeling/censo_escolar_poc/03_profiles_before_after.png
+images/modeling/censo_escolar_poc/04_tp_localizacao.png
+images/modeling/censo_escolar_poc/05_qt_mat_fund_ai_2.png
+images/modeling/feature_audit/02_serie_by_target.png
+images/modeling/feature_audit/03_caderno_by_target.png
+images/modeling/final_validation/
+images/modeling/granularity/03_mixed_profile_uncertainty.png
+images/modeling/granularity/04_context_group_size.png
+images/modeling/granularity/05_context_target_rate.png
+images/modeling/clustering/04_pca_clusters.png
+
+# Local course material
+/tech-challenge-fase3/*.pdf

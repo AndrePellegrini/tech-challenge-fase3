@@ -1,0 +1,108 @@
+{
+  "opened_once_at_utc": "2026-09-10T01:41:51.457316+00:00",
+  "protocol": {
+    "fit_strategy": "modelo congelado ajustado somente em TRAIN; sem refit",
+    "random_state": 42,
+    "operational_threshold": null,
+    "descriptive_threshold": 0.5,
+    "model_sha256": "584755eef1aefb8be8af88fafd07518b299cfa488d5143852c8a30dfaf539710",
+    "dataset_sha256": "54b56a25e86b6c4c99e721ae6fd00c0d3c8130f7cdaaeaf1b7f2f434f97065e6"
+  },
+  "test": {
+    "rows": 243746,
+    "municipalities": 828,
+    "class_counts": {
+      "0": 96611,
+      "1": 147135
+    },
+    "class_shares": {
+      "0": 0.39635932487097225,
+      "1": 0.6036406751290277
+    },
+    "prob_risk_summary": {
+      "count": 243746.0,
+      "mean": 0.39885773700275945,
+      "std": 0.13888703638986724,
+      "min": 0.0271360670036902,
+      "10%": 0.21358542439872985,
+      "25%": 0.30286774935549665,
+      "50%": 0.4145746746541905,
+      "75%": 0.4974256814265542,
+      "90%": 0.5553301957938525,
+      "max": 0.7357892851379282
+    },
+    "metrics": {
+      "roc_auc": 0.6630600299599092,
+      "accuracy_threshold_0_50": 0.6331221845691827,
+      "balanced_accuracy_threshold_0_50": 0.5832435610249017,
+      "precision_class_0_risk": 0.5608838580675772,
+      "recall_class_0_risk": 0.3426110898344909,
+      "f1_class_0_risk": 0.42538152610441765,
+      "precision_class_1_literate": 0.6561992508065738,
+      "recall_class_1_literate": 0.8238760322153125,
+      "f1_class_1_literate": 0.7305396438934875,
+      "confusion_matrix_true_rows_predicted_columns_0_1": [
+        [
+          33100,
+          63511
+        ],
+        [
+          25914,
+          121221
+        ]
+      ]
+    }
+  },
+  "validation": {
+    "rows": 297079,
+    "class_shares": {
+      "0": 0.3970627341548881,
+      "1": 0.6029372658451119
+    },
+    "prob_risk_summary": {
+      "count": 297079.0,
+      "mean": 0.40592431094418546,
+      "std": 0.11702288746142452,
+      "min": 0.030937826147950487,
+      "10%": 0.240542932475309,
+      "25%": 0.32678314166897804,
+      "50%": 0.4274141603720889,
+      "75%": 0.45781003247514296,
+      "90%": 0.5519676054163822,
+      "max": 0.7040441715350834
+    },
+    "metrics": {
+      "roc_auc": 0.6408897253035296,
+      "accuracy_threshold_0_50": 0.6367801157267932,
+      "balanced_accuracy_threshold_0_50": 0.5723071567860417,
+      "precision_class_0_risk": 0.5984103989663678,
+      "recall_class_0_risk": 0.25914088793563866,
+      "f1_class_0_risk": 0.3616637383829958,
+      "precision_class_1_literate": 0.6447477001752054,
+      "recall_class_1_literate": 0.8854734256364448,
+      "f1_class_1_literate": 0.7461757586734946,
+      "confusion_matrix_true_rows_predicted_columns_0_1": [
+        [
+          30568,
+          87391
+        ],
+        [
+          20514,
+          158606
+        ]
+      ]
+    }
+  },
+  "comparison": {
+    "auc_test_minus_validation": 0.02217030465637959,
+    "absolute_auc_difference": 0.02217030465637959,
+    "magnitude": "moderada"
+  },
+  "overlap": {
+    "test_train_municipalities": 0,
+    "test_validation_municipalities": 0,
+    "test_train_students": 0,
+    "test_validation_students": 0
+  },
+  "retuning_after_test": false
+}

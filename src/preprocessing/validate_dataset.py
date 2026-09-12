@@ -1,20 +1,7 @@
-"""
-Validação do dataset de modelagem contra o contrato da Fase 3.
+"""Valida o parquet Gold local sem acessar AWS/BigQuery ou alterar dados.
 
-Executa, de forma independente do BigQuery, todas as verificações da seção
-"Dataset de modelagem definido" sobre o artefato local gerado pelo pipeline
-(`python -m src.preprocessing.pipeline`):
-
-1. schema: presença exata das 10 colunas do contrato;
-2. shape: 1.851.852 linhas x 10 colunas;
-3. unicidade: nenhuma duplicidade de `id_aluno`;
-4. target: sem nulos e apenas valores {0, 1};
-5. histórico: 1.816.270 registros com histórico e 35.582 sem;
-6. coerência: nulos das duas features históricas exatamente
-   alinhados à flag `historico_2023_disponivel`.
-
-Uso:
-    python -m src.preprocessing.validate_dataset
+Uso: python -m src.preprocessing.validate_dataset
+Schema exato (ordem livre), contagens, unicidade, target e missingness Gold.
 """
 from __future__ import annotations
 
@@ -23,6 +10,8 @@ from pathlib import Path
 import pandas as pd
 
 from src.preprocessing.dataset_contract import (
+    DATASET_FILENAME,
+    GOLD_FEATURE_COLUMNS,
     EXPECTED_COLUMNS,
     EXPECTED_HISTORY_AVAILABLE,
     EXPECTED_HISTORY_MISSING,
@@ -43,7 +32,7 @@ DATASET_PATH = (
     PROJECT_ROOT
     / "data"
     / "processed"
-    / "modeling_dataset_2024.parquet"
+    / DATASET_FILENAME
 )
 
 
@@ -54,6 +43,9 @@ def check_schema(dataset: pd.DataFrame) -> list[str]:
     """
 
     errors: list[str] = []
+
+    if dataset.columns.has_duplicates:
+        errors.append("Nomes de colunas duplicados no schema.")
 
     expected = set(get_expected_columns())
     found = set(dataset.columns)
@@ -115,6 +107,9 @@ def check_uniqueness(dataset: pd.DataFrame) -> list[str]:
 
     errors: list[str] = []
 
+    if dataset[UNIQUE_KEY_COLUMN].isna().any():
+        errors.append(f"Valores nulos em {UNIQUE_KEY_COLUMN}.")
+
     duplicated = int(
         dataset[UNIQUE_KEY_COLUMN]
         .duplicated()
@@ -175,7 +170,9 @@ def check_history(
 
     errors: list[str] = []
 
-    flag = dataset[HISTORY_FLAG_COLUMN].astype("int64")
+    flag = dataset[HISTORY_FLAG_COLUMN]
+    if flag.isna().any() or not flag.isin([0, 1]).all():
+        return [f"{HISTORY_FLAG_COLUMN} deve ser não nula e conter apenas 0 ou 1."]
 
     available = int((flag == 1).sum())
     missing = int((flag == 0).sum())
@@ -195,32 +192,18 @@ def check_history(
                 f"Obtido: {missing:,}."
             )
 
-    for column in HISTORY_FEATURE_COLUMNS:
-        null_count = int(
-            dataset[column]
-            .isna()
-            .sum()
-        )
-
-        if null_count != missing:
+    for column in GOLD_FEATURE_COLUMNS:
+        invalid = (flag.eq(0) & dataset[column].notna()).sum()
+        if invalid:
             errors.append(
-                f"Nulos em {column} ({null_count:,}) "
-                "diferem dos registros sem histórico "
-                f"({missing:,})."
+                f"{invalid:,} registros sem Gold com {column} preenchida."
             )
 
-        misaligned = int(
-            (
-                dataset[column].isna()
-                != (flag == 0)
-            ).sum()
-        )
-
-        if misaligned > 0:
+    for column in HISTORY_FEATURE_COLUMNS:
+        invalid = (flag.eq(1) & dataset[column].isna()).sum()
+        if invalid:
             errors.append(
-                f"{misaligned:,} registros com nulos de "
-                f"{column} desalinhados da flag "
-                f"{HISTORY_FLAG_COLUMN}."
+                f"{invalid:,} registros com Gold e núcleo {column} nulo."
             )
 
     return errors
@@ -270,7 +253,7 @@ def validate_dataset(
         "shape": check_shape(dataset, strict_counts),
         "unicidade_id_aluno": check_uniqueness(dataset),
         "target": check_target(dataset),
-        "historico_2023": check_history(
+        "gold_historico": check_history(
             dataset,
             strict_counts,
         ),
@@ -299,8 +282,9 @@ def main() -> None:
 
     if not DATASET_PATH.exists():
         raise FileNotFoundError(
-            "Dataset não encontrado. Execute antes: "
-            "python -m src.preprocessing.pipeline"
+            f"Dataset Gold não encontrado: {DATASET_PATH}. "
+            "Disponibilize o parquet local ou reproduza a integração descrita em "
+            "python -m src.preprocessing.gold_pipeline (requer leitura AWS/S3)."
         )
 
     dataset = pd.read_parquet(DATASET_PATH)
