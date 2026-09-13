@@ -2,14 +2,15 @@
   "proposito": "amostra para verificar a execução da pipeline; os resultados oficiais do projeto vêm do dataset completo, não versionado",
   "origem": "modeling_dataset_2024_gold.parquet",
   "arquivo": "data/processed/sample_modeling_dataset.parquet",
-  "bytes": 982932,
+  "bytes": 436904,
   "estrategia": "amostragem de municípios estratificada por UF, com estrato próprio para os municípios sem histórico Gold",
   "random_state": 42,
-  "colunas_anonimizadas": [
+  "colunas_substituidas": [
     "id_aluno",
     "id_escola"
   ],
-  "anonimizacao": "sha256 com sal fixo, truncado em 12 caracteres",
+  "substituicao": "surrogate sequencial atribuido na ordem de aparicao; nao deriva do identificador de origem e nao permite reverte-lo",
+  "identificadores_em_X": false,
   "universo": {
     "linhas": 1851828,
     "municipios": 5517,

@@ -518,7 +518,9 @@ $env:MODELING_DATASET_PATH = "data/processed/sample_modeling_dataset.parquet"
 python -m src.modeling.cross_validation
 ```
 
-A amostra tem 53.854 alunos de 161 municípios, 0,94 MB, cobrindo as 24 UFs presentes no dataset. A amostragem é **por município**, não por aluno, porque o split é agrupado e amostrar alunos soltos o inviabilizaria. `id_aluno` e `id_escola` são substituídos por hash; `id_municipio` é preservado por ser código público do IBGE.
+A amostra tem 53.854 alunos de 161 municípios, 0,42 MB, cobrindo as 24 UFs presentes no dataset. A amostragem é **por município**, não por aluno, porque o split é agrupado e amostrar alunos soltos o inviabilizaria.
+
+`id_aluno` e `id_escola` são substituídos por **surrogates sequenciais** — `a00001`, `e0001` — e não por hash dos valores originais. Nenhum dos dois entra em X: o modelo usa 16 features e nenhuma delas é identificador, de modo que esses campos servem apenas à unicidade e a um eventual join escolar futuro. O surrogate cumpre as duas funções e não guarda caminho de volta ao código de origem. `id_municipio` é preservado por ser código público do IBGE e por o split agrupado depender dele.
 
 > A amostra serve para **verificar a execução da pipeline**. Os resultados oficiais do projeto vêm do dataset completo de 1.851.828 linhas, que não é versionado. Números obtidos sobre a amostra não são comparáveis aos do relatório.
 

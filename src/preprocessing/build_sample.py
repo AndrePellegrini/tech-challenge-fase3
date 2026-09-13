@@ -18,13 +18,18 @@ impossível e daria uma falsa impressão de variação individual.
 territorial é o principal eixo de variação do dataset. Amostrar municípios sem
 estratificar deixaria UFs pequenas de fora e mudaria o comportamento do encoder.
 
-Os identificadores `id_aluno` e `id_escola` são substituídos por hash. `id_municipio` e
-`id_municipio_nome` são preservados: são códigos e nomes públicos do IBGE, e o split
-agrupado depende deles.
+Os identificadores `id_aluno` e `id_escola` são substituídos por **surrogates
+sequenciais**, e não por hash dos valores originais. A distinção importa: nenhum dos
+dois entra em X — o modelo usa 16 features e nenhuma delas é identificador —, de modo
+que seus valores servem apenas à unicidade e a um eventual join escolar futuro. Um
+surrogate cumpre as duas funções e não guarda caminho de volta ao código de origem,
+enquanto um hash de oito dígitos com sal versionado seria reversível por força bruta.
+
+`id_municipio` e `id_municipio_nome` são preservados: são códigos e nomes públicos do
+IBGE, e o split agrupado depende deles.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 
@@ -40,27 +45,29 @@ SUMMARY_PATH = REPORTS / "sample_dataset_summary.json"
 
 TARGET_ROWS = 50_000
 RANDOM_STATE = 42
-HASHED_COLUMNS = ("id_aluno", "id_escola")
-# Sal fixo: a amostra precisa ser reproduzível bit a bit por quem clonar o repositório.
-# A troca é consciente — o sal é público, então o hash protege contra republicação
-# direta dos identificadores, não contra um ataque de força bruta sobre o espaço de
-# códigos do INEP, que já são pseudônimos e não trazem dado pessoal.
-SALT = "tech-challenge-fase3"
+# Prefixos dos surrogates. A numeração é atribuída na ordem de aparição dentro da
+# amostra, o que a torna reproduzível por quem clonar o repositório e, ao mesmo tempo,
+# independente dos códigos de origem.
+SURROGATE_COLUMNS = {"id_aluno": "a", "id_escola": "e"}
 # Estrato dos municípios sem histórico Gold, cujo `sigla_uf` é nulo.
 NO_GOLD_STRATUM = "SEM_GOLD"
-HASH_LENGTH = 12
 # Passos da busca binária que calibra a fração sorteada até o volume alvo.
 CALIBRATION_STEPS = 18
 
 
-def anonymize(series: pd.Series) -> pd.Series:
-    """Substitui cada identificador por um hash curto e estável."""
-    def digest(value):
-        if pd.isna(value):
-            return value
-        raw = f"{SALT}:{value}".encode("utf-8")
-        return hashlib.sha256(raw).hexdigest()[:HASH_LENGTH]
-    return series.map(digest)
+def surrogate(series: pd.Series, prefix: str) -> pd.Series:
+    """Substitui cada identificador distinto por um codigo sequencial.
+
+    Valores iguais na origem recebem o mesmo surrogate, o que preserva a relação
+    aluno-escola dentro da amostra. Nulos são mantidos como nulos.
+    """
+    distinct = series.dropna().unique()
+    width = max(4, len(str(len(distinct))))
+    mapping = {
+        original: f"{prefix}{index:0{width}d}"
+        for index, original in enumerate(distinct, start=1)
+    }
+    return series.map(mapping)
 
 
 def _draw(by_municipality: pd.DataFrame, factor: float, random_state: int) -> list:
@@ -116,14 +123,15 @@ def select_municipalities(data: pd.DataFrame, target_rows: int = TARGET_ROWS,
 
 def build_sample(data: pd.DataFrame, target_rows: int = TARGET_ROWS,
                  random_state: int = RANDOM_STATE) -> pd.DataFrame:
-    """Recorta os municípios sorteados e anonimiza os identificadores individuais."""
+    """Recorta os municípios sorteados e substitui os identificadores individuais."""
     municipalities = select_municipalities(data, target_rows, random_state)
     sample = data.loc[data["id_municipio"].isin(municipalities)].copy()
-    for column in HASHED_COLUMNS:
-        sample[column] = anonymize(sample[column])
+    sample = sample.sort_values(["id_municipio", "id_aluno"], ignore_index=True)
+    for column, prefix in SURROGATE_COLUMNS.items():
+        sample[column] = surrogate(sample[column], prefix)
     if sample["id_aluno"].duplicated().any():
-        raise ValueError("Colisão de hash em id_aluno; aumente HASH_LENGTH.")
-    return sample.sort_values(["id_municipio", "id_aluno"], ignore_index=True)
+        raise ValueError("Surrogate de id_aluno nao ficou unico.")
+    return sample
 
 
 def representativeness(full: pd.DataFrame, sample: pd.DataFrame) -> dict:
@@ -165,8 +173,10 @@ def main() -> None:
         "bytes": int(SAMPLE_PATH.stat().st_size),
         "estrategia": "amostragem de municípios estratificada por UF, com estrato próprio para os municípios sem histórico Gold",
         "random_state": RANDOM_STATE,
-        "colunas_anonimizadas": list(HASHED_COLUMNS),
-        "anonimizacao": f"sha256 com sal fixo, truncado em {HASH_LENGTH} caracteres",
+        "colunas_substituidas": list(SURROGATE_COLUMNS),
+        "substituicao": ("surrogate sequencial atribuido na ordem de aparicao; nao "
+                         "deriva do identificador de origem e nao permite reverte-lo"),
+        "identificadores_em_X": False,
         **comparison,
     }
     REPORTS.mkdir(exist_ok=True)
