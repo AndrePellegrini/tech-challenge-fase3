@@ -195,23 +195,48 @@ em [Validação final](final_validation_results.md) e `final_model_comparison.cs
 
 ## DEC-010 — Estratégia de validação cruzada
 
-**Status:** Decidida: não executar. Limitação assumida e declarada.
+**Status:** Executada. `GroupKFold` de 5 folds sobre treino e validação.
 
 **Classificação:** decisão metodológica do grupo.
 
-A validação cruzada agrupada por município não foi executada. O custo de refazer
-onze ajustes sobre 1,85 milhão de linhas foi julgado desproporcional diante de um
-holdout municipal já estanque, com zero sobreposição de município e de aluno entre
-as três partições.
+**Escopo:** `GroupKFold` agrupado por `id_municipio`, 5 folds, sobre a união de
+treino e validação — 1.608.082 alunos em 4.689 municípios. O conjunto de teste não
+foi materializado, e há verificação em código que falha se índices de teste
+aparecerem no desenvolvimento.
 
-**Limitação reconhecida:** com holdout único não há estimativa de variância entre
-folds. As diferenças de ROC AUC entre os candidatos mais próximos ficam na casa de
-0,002 a 0,010, faixa em que o holdout isolado não permite afirmar significância.
-Por isso a regra de seleção (DEC-012) não usa AUC como critério único, e sim uma
-ordem de desempate que privilegia estabilidade.
+Foram avaliados os quatro finalistas, e não os onze candidatos. Onze modelos por
+cinco folds seriam 55 ajustes, e só a Random Forest custa cerca de 120 segundos por
+ajuste. Os finalistas cobrem a faixa de decisão real do holdout.
 
-Uma `GroupKFold` sobre amostra estratificada de municípios é a evolução natural e
-está registrada como trabalho futuro.
+**Resultado:**
+
+| Modelo | AUC média | Desvio | AUC do holdout |
+|---|---:|---:|---:|
+| `random_forest_controlled` | 0,6608 | 0,0079 | 0,6409 |
+| `logistic_baseline` | 0,6560 | 0,0146 | 0,6186 |
+| `decision_tree_d5_l100` | 0,6512 | 0,0114 | 0,6307 |
+| `decision_tree_d10_l100` | 0,6504 | 0,0083 | 0,6302 |
+
+**Dois achados relevantes.**
+
+Primeiro, a ordem dos finalistas **difere** da do holdout: a regressão logística era
+a última entre eles no holdout e aparece em segundo na validação cruzada. O holdout
+único era, portanto, sensível à partição — exatamente o risco que motivou esta
+execução.
+
+Segundo, a diferença de 0,0047 entre o primeiro e o segundo colocado **não supera** a
+dispersão combinada entre folds (0,0166). Random Forest e regressão logística são
+estatisticamente indistinguíveis nesta evidência. A escolha do modelo final se
+sustenta pelos critérios de desempate da DEC-012 — menor gap entre treino e validação
+e maior estabilidade das probabilidades agregadas —, e não pela ROC AUC isolada.
+
+**Consequência para a avaliação final:** a média da validação cruzada (0,6608) fica a
+0,0023 da AUC de teste (0,6631), dentro de um desvio-padrão entre folds, enquanto o
+holdout de validação ficou 0,0199 abaixo. Isso esclarece a diferença de +0,0222 entre
+teste e validação que o protocolo havia classificado como moderada: a partição de
+validação era pessimista, e não a de teste favorável.
+
+Resultados completos em [Validação cruzada](cross_validation_results.md).
 
 ---
 

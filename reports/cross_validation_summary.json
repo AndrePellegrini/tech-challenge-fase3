@@ -1,0 +1,58 @@
+{
+  "n_splits": 5,
+  "group_column": "id_municipio",
+  "random_state": 42,
+  "candidates": [
+    "random_forest_controlled",
+    "decision_tree_d5_l100",
+    "decision_tree_d10_l100",
+    "logistic_baseline"
+  ],
+  "development_rows": 1608082,
+  "development_municipalities": 4689,
+  "test_accessed": false,
+  "summary": [
+    {
+      "model": "random_forest_controlled",
+      "folds": 5,
+      "roc_auc_mean": 0.6607511500974088,
+      "roc_auc_std": 0.007937475766966816,
+      "roc_auc_min": 0.652289450312212,
+      "roc_auc_max": 0.6710280660702872,
+      "seconds_total": 595.1636856000405
+    },
+    {
+      "model": "logistic_baseline",
+      "folds": 5,
+      "roc_auc_mean": 0.6560411427726216,
+      "roc_auc_std": 0.014624270397587303,
+      "roc_auc_min": 0.6329342886146928,
+      "roc_auc_max": 0.6704819774762603,
+      "seconds_total": 228.84821860003285
+    },
+    {
+      "model": "decision_tree_d5_l100",
+      "folds": 5,
+      "roc_auc_mean": 0.6511709585215616,
+      "roc_auc_std": 0.01143151263281577,
+      "roc_auc_min": 0.635113181867129,
+      "roc_auc_max": 0.6637184820875461,
+      "seconds_total": 46.42015700007323
+    },
+    {
+      "model": "decision_tree_d10_l100",
+      "folds": 5,
+      "roc_auc_mean": 0.6504429315697506,
+      "roc_auc_std": 0.008325991833445016,
+      "roc_auc_min": 0.6401450099949569,
+      "roc_auc_max": 0.6625437696076112,
+      "seconds_total": 153.78770610003266
+    }
+  ],
+  "versions": {
+    "python": "3.12.10",
+    "pandas": "2.3.3",
+    "numpy": "2.5.3",
+    "scikit_learn": "1.9.0"
+  }
+}

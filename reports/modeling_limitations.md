@@ -17,18 +17,19 @@
   precisa ser avaliado pelo grupo.
 - A análise municipal deriva previsões individuais de validação e não representa
   estimativa oficial de cumprimento de metas.
-- Não foi executada validação cruzada agrupada. Com holdout único não há
-  estimativa de variância entre folds, e diferenças de ROC AUC na casa de 0,002
-  entre candidatos próximos não são estatisticamente distinguíveis.
+- A validação cruzada agrupada foi executada nos quatro finalistas, não nos onze
+  candidatos, por custo computacional. A dispersão entre folds mostra que Random
+  Forest e regressão logística são estatisticamente indistinguíveis, de modo que a
+  escolha do modelo final se apoia nos critérios de desempate e não na ROC AUC.
 - A otimização de hiperparâmetros usou grade manual pequena e definida a priori,
   sem busca automatizada; não há garantia de que o ótimo esteja contido nela.
-- A diferença de ROC AUC entre teste (0,6631) e validação (0,6409) é de +0,0222,
-  classificada como moderada pelo próprio protocolo. O teste ficou acima da
-  validação, o que afasta overfitting de seleção, mas indica que a partição de
-  teste é marginalmente mais favorável — a estimativa de generalização deve ser
-  lida com essa ressalva.
-- SHAP não foi executado. Depende do modelo serializado e do parquet de
-  modelagem, nenhum dos dois versionado. Permanece como pendência explícita.
-- A reprodução completa da pipeline exige credenciais de leitura no bucket S3
-  privado da equipe. Sem elas, um avaliador externo consegue executar a suíte de
-  testes, mas não regenerar o dataset de modelagem.
+- A diferença de ROC AUC entre teste (0,6631) e validação (0,6409) é de +0,0222.
+  A validação cruzada esclareceu a origem: sua média é 0,6608, a 0,0023 do teste,
+  o que indica partição de validação pessimista e não partição de teste favorável.
+  A melhor estimativa de generalização é a média da validação cruzada.
+- A interpretabilidade por SHAP usa amostra de 8.000 linhas da validação, não a
+  partição inteira. O ranking é associativo e descreve como o modelo usa as
+  features, não como a alfabetização é produzida.
+- A reprodução do dataset completo exige credenciais de leitura no bucket S3 privado
+  da equipe. Sem elas, é possível executar a suíte de testes e toda a pipeline sobre
+  a amostra anonimizada versionada, mas não regenerar as 1.851.828 linhas.
