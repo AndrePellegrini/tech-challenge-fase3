@@ -455,7 +455,7 @@ tech-challenge-fase3/
 │   ├── evaluation/        # métricas compartilhadas
 │   └── visualization/     # primitivas de gráfico
 │
-├── tests/                 # 134 testes automatizados
+├── tests/                 # 138 testes automatizados
 ├── reports/               # documentação técnica, decisões e resultados
 ├── images/                # gráficos gerados pelos scripts
 ├── conftest.py
@@ -466,18 +466,20 @@ tech-challenge-fase3/
 
 ### Testes
 
-O projeto tem **134 testes automatizados** cobrindo contrato do dataset, integridade do split, ausência de vazamento, pré-processamento, validação cruzada, SHAP, amostragem, auditorias e visualização. Todos usam dados sintéticos ou mocks: **nenhum depende de credencial, S3 ou BigQuery**.
+O projeto tem **138 testes automatizados** cobrindo contrato do dataset, integridade do split, ausência de vazamento, pré-processamento, validação cruzada, SHAP, amostragem, auditorias e visualização. Todos usam dados sintéticos ou mocks: **nenhum depende de credencial, S3 ou BigQuery**.
 
 ```bash
 pytest tests -q
 ```
 
-A suíte passa em dois ambientes distintos, o que dá alguma garantia contra quebra por versão:
+Quatro desses testes cobrem o leitor legado de BigQuery e exigem o pacote `basedosdados`. Com o `requirements.txt` completo instalado, os 138 rodam. Sem esse pacote, o módulo é **pulado automaticamente** em vez de derrubar a coleta, e ficam 137 executados.
+
+A suíte passa em ambientes com versões diferentes, o que dá alguma garantia contra quebra por versão:
 
 | Ambiente | pandas | scikit-learn | Resultado |
 |---|---|---|---|
-| Atual | 3.0.5 | 1.9.1 | 134 ✓ |
-| Da execução original | 2.3.3 | 1.9.0 | 134 ✓ |
+| Atual | 3.0.5 | 1.9.1 | ✓ |
+| Da execução original | 2.3.3 | 1.9.0 | ✓ |
 
 Destacam-se os testes que protegem a validade metodológica: um inverte o target e exige split idêntico, provando que o alvo não influencia a divisão; outro inspeciona o código-fonte da validação para garantir que ele nunca referencia o conjunto de teste; um terceiro verifica que o bloqueio de reabertura do teste vem antes de qualquer materialização dos dados.
 
@@ -505,7 +507,7 @@ python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
 
-pytest tests -q                              # 134 testes
+pytest tests -q                              # 138 testes
 python -m src.modeling.goal_risk_analysis    # risco de meta 2024
 ```
 
@@ -534,6 +536,8 @@ python -m src.modeling.municipal_clustering
 ```
 
 Para regenerar a própria amostra: `python -m src.preprocessing.build_sample`.
+
+> **Windows, caminhos longos.** O `jupyter` cria caminhos internos muito profundos, e o `pip install` pode falhar com `[WinError 3]` se o repositório estiver clonado em um diretório já longo. Clone em um caminho curto, do tipo `C:\projetos\tech-challenge-fase3`, ou habilite o suporte a caminhos longos do Windows. O erro é do instalador, não do projeto.
 
 O caminho de BigQuery/Base dos Dados permanece como alternativa legada e opcional; `basedosdados` é a única dependência exclusiva dele, e o teste correspondente é pulado automaticamente quando o pacote não está instalado.
 
