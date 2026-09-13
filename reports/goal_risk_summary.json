@@ -19,6 +19,17 @@
     "falso_negativo": 120,
     "verdadeiro_negativo": 326
   },
+  "alerta_classe_majoritaria": {
+    "municipios": 797,
+    "acuracia": 0.5558343789209536,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "verdadeiro_positivo": 0,
+    "falso_positivo": 0,
+    "falso_negativo": 354,
+    "verdadeiro_negativo": 443
+  },
   "alerta_naive_2023": {
     "municipios": 797,
     "acuracia": 0.4780426599749059,
@@ -29,5 +40,6 @@
     "falso_positivo": 345,
     "falso_negativo": 71,
     "verdadeiro_negativo": 98
-  }
+  },
+  "ganho_sobre_classe_majoritaria": 0.14680050188205773
 }

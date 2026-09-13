@@ -181,6 +181,8 @@ def build_report(frame: pd.DataFrame, summary: dict) -> str:
     )
     model = summary["alerta_modelo"]
     naive = summary["alerta_naive_2023"]
+    majority = summary["alerta_classe_majoritaria"]
+    gain = summary["ganho_sobre_classe_majoritaria"]
     return f"""# Risco de não atingimento da meta municipal de 2024
 
 Responde à pergunta de negócio *"como prever municípios que podem não atingir metas
@@ -210,13 +212,25 @@ Na realidade observada em 2024, {summary['municipios_nao_atingiram']} município
 ## Qualidade do alerta
 
 Como o conjunto de teste carrega a taxa efetivamente observada em 2024, o alerta pode
-ser auditado contra o desfecho real. A linha de base ingênua supõe que 2024 repete a
-taxa de 2023.
+ser auditado contra o desfecho real. São usadas duas referências: a **classe
+majoritária**, que nunca alerta ninguém, e a **ingênua**, que supõe a repetição da taxa
+de 2023.
 
 | Estratégia | Acurácia | Precisão | Recall | F1 |
 |---|---:|---:|---:|---:|
-| Projeção do modelo | {model['acuracia']:.4f} | {model['precision']:.4f} | {model['recall']:.4f} | {model['f1']:.4f} |
-| Linha de base: repetir 2023 | {naive['acuracia']:.4f} | {naive['precision']:.4f} | {naive['recall']:.4f} | {naive['f1']:.4f} |
+| Projeção do modelo | **{model['acuracia']:.4f}** | {model['precision']:.4f} | {model['recall']:.4f} | {model['f1']:.4f} |
+| Referência: classe majoritária | {majority['acuracia']:.4f} | {majority['precision']:.4f} | {majority['recall']:.4f} | {majority['f1']:.4f} |
+| Referência: repetir 2023 | {naive['acuracia']:.4f} | {naive['precision']:.4f} | {naive['recall']:.4f} | {naive['f1']:.4f} |
+
+**O ganho real do modelo é de {gain:+.4f} sobre a classe majoritária**, e é esse o
+número que deve ser citado. A classe majoritária aposta que todos os municípios atingem
+a meta: acerta {majority['acuracia']:.1%} sem modelo algum, e tem precisão e F1 iguais a
+zero por construção, porque nunca emite um alerta.
+
+A baseline ingênua merece atenção: com {naive['acuracia']:.4f} ela é **pior que a classe
+majoritária**. Ela sobre-alerta, com recall de {naive['recall']:.4f} e precisão de apenas
+{naive['precision']:.4f} — sinaliza quase todo mundo e por isso quase não informa.
+Comparar o modelo apenas contra ela inflaria o ganho aparente.
 
 Matriz do alerta do modelo: {model['verdadeiro_positivo']} alertas corretos,
 {model['falso_positivo']} alarmes falsos, {model['falso_negativo']} municípios em
@@ -258,6 +272,12 @@ def main() -> None:
     naive_metrics = alert_metrics(
         with_naive["nao_atingiu_observado"], with_naive["alerta_naive_2023"],
     )
+    # Referencia obrigatoria: nao alertar ninguem, ou seja, apostar na classe
+    # majoritaria. E o primeiro numero que qualquer avaliador cobra, e sem ele
+    # a comparacao com a baseline ingenua superestima o ganho do modelo.
+    majority_metrics = alert_metrics(
+        frame["nao_atingiu_observado"], pd.Series(False, index=frame.index),
+    )
 
     source_rows = len(load_municipal_table())
     summary = {
@@ -271,7 +291,10 @@ def main() -> None:
         "percentual_nao_atingiu": float(frame["nao_atingiu_observado"].mean()),
         "gap_previsto_mediano": float(frame["gap_previsto"].median()),
         "alerta_modelo": model_metrics,
+        "alerta_classe_majoritaria": majority_metrics,
         "alerta_naive_2023": naive_metrics,
+        "ganho_sobre_classe_majoritaria":
+            model_metrics["acuracia"] - majority_metrics["acuracia"],
     }
 
     columns = [
@@ -292,7 +315,10 @@ def main() -> None:
         "municipios_avaliados": summary["municipios_avaliados"],
         "municipios_em_risco": summary["municipios_em_risco"],
         "acuracia_modelo": round(model_metrics["acuracia"], 4),
+        "acuracia_classe_majoritaria": round(majority_metrics["acuracia"], 4),
         "acuracia_naive": round(naive_metrics["acuracia"], 4),
+        "ganho_sobre_classe_majoritaria":
+            round(summary["ganho_sobre_classe_majoritaria"], 4),
     }, ensure_ascii=False, indent=2))
 
 

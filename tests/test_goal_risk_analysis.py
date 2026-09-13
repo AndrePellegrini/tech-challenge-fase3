@@ -91,6 +91,20 @@ class AlertMetricTests(unittest.TestCase):
         self.assertEqual(metrics["precision"], 0.0)
         self.assertEqual(metrics["f1"], 0.0)
 
+    def test_majority_class_baseline_matches_the_majority_share(self):
+        """Nunca alertar acerta exatamente a proporção de quem atingiu a meta."""
+        observed = pd.Series([True, True, False, False, False])
+        never = pd.Series(False, index=observed.index)
+        metrics = alert_metrics(observed, never)
+        self.assertAlmostEqual(metrics["acuracia"], 3 / 5)
+        self.assertEqual(metrics["precision"], 0.0)
+        self.assertEqual(metrics["recall"], 0.0)
+        self.assertEqual(metrics["f1"], 0.0)
+        self.assertEqual(metrics["verdadeiro_positivo"], 0)
+        self.assertEqual(metrics["falso_positivo"], 0)
+        self.assertEqual(metrics["falso_negativo"], 2)
+        self.assertEqual(metrics["verdadeiro_negativo"], 3)
+
 
 class ConcentrationNoteTests(unittest.TestCase):
     def test_note_appears_when_one_uf_dominates(self):

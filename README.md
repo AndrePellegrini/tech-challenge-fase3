@@ -307,9 +307,12 @@ Como o conjunto de teste carrega a taxa efetivamente observada em 2024, **a proj
 | Estratégia | Acurácia | Precisão | Recall | F1 |
 |---|---:|---:|---:|---:|
 | Projeção do modelo | **0,7026** | 0,6667 | 0,6610 | 0,6638 |
-| Linha de base: repetir a taxa de 2023 | 0,4780 | 0,4506 | 0,7994 | 0,5764 |
+| Referência: classe majoritária | 0,5558 | 0,0000 | 0,0000 | 0,0000 |
+| Referência: repetir a taxa de 2023 | 0,4780 | 0,4506 | 0,7994 | 0,5764 |
 
-O alerta do modelo acerta 70,3% dos municípios, contra 47,8% da linha de base ingênua. A linha de base tem recall alto porque sinaliza quase todo mundo, e por isso sua precisão desaba. O ganho está em **separar quem realmente corre risco de quem não corre**. Detalhes em [Risco de meta 2024](reports/goal_risk_2024.md).
+O modelo acerta 70,3% dos municípios. A referência correta é a **classe majoritária**: como 443 dos 797 municípios (55,6%) atingiram a meta, apostar que todos atingem já acerta 55,6% sem modelo algum. **O ganho real é de +14,7 pontos.**
+
+Note que a baseline ingênua é *pior* que a classe majoritária: ela sobre-alerta, com recall 0,7994 e precisão 0,4506, sinalizando quase todo mundo. O valor do modelo está em **separar quem realmente corre risco de quem não corre** — algo que nenhuma das duas referências faz. Detalhes em [Risco de meta 2024](reports/goal_risk_2024.md).
 
 ### Quais variáveis possuem maior influência nos modelos?
 

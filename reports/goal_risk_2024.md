@@ -27,13 +27,25 @@ Na realidade observada em 2024, 354 municípios
 ## Qualidade do alerta
 
 Como o conjunto de teste carrega a taxa efetivamente observada em 2024, o alerta pode
-ser auditado contra o desfecho real. A linha de base ingênua supõe que 2024 repete a
-taxa de 2023.
+ser auditado contra o desfecho real. São usadas duas referências: a **classe
+majoritária**, que nunca alerta ninguém, e a **ingênua**, que supõe a repetição da taxa
+de 2023.
 
 | Estratégia | Acurácia | Precisão | Recall | F1 |
 |---|---:|---:|---:|---:|
-| Projeção do modelo | 0.7026 | 0.6667 | 0.6610 | 0.6638 |
-| Linha de base: repetir 2023 | 0.4780 | 0.4506 | 0.7994 | 0.5764 |
+| Projeção do modelo | **0.7026** | 0.6667 | 0.6610 | 0.6638 |
+| Referência: classe majoritária | 0.5558 | 0.0000 | 0.0000 | 0.0000 |
+| Referência: repetir 2023 | 0.4780 | 0.4506 | 0.7994 | 0.5764 |
+
+**O ganho real do modelo é de +0.1468 sobre a classe majoritária**, e é esse o
+número que deve ser citado. A classe majoritária aposta que todos os municípios atingem
+a meta: acerta 55.6% sem modelo algum, e tem precisão e F1 iguais a
+zero por construção, porque nunca emite um alerta.
+
+A baseline ingênua merece atenção: com 0.4780 ela é **pior que a classe
+majoritária**. Ela sobre-alerta, com recall de 0.7994 e precisão de apenas
+0.4506 — sinaliza quase todo mundo e por isso quase não informa.
+Comparar o modelo apenas contra ela inflaria o ganho aparente.
 
 Matriz do alerta do modelo: 234 alertas corretos,
 117 alarmes falsos, 120 municípios em

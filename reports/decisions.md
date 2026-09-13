@@ -455,12 +455,18 @@ de base ingênua que supõe a repetição da taxa de 2023.
 | Estratégia | Acurácia | Precisão | Recall | F1 |
 |---|---:|---:|---:|---:|
 | Projeção do modelo | 0,7026 | 0,6667 | 0,6610 | 0,6638 |
-| Linha de base: repetir 2023 | 0,4780 | 0,4506 | 0,7994 | 0,5764 |
+| Referência: classe majoritária | 0,5558 | 0,0000 | 0,0000 | 0,0000 |
+| Referência: repetir 2023 | 0,4780 | 0,4506 | 0,7994 | 0,5764 |
 
-O alerta do modelo acerta 70,3% dos 797 municípios avaliados, contra 47,8% da linha
-de base. A linha de base tem recall alto (0,7994) porque sinaliza quase todo mundo, e
-por isso sua precisão desaba. O ganho do modelo está em separar quem realmente corre
-risco de quem não corre.
+**O ganho a ser citado é de +0,1468 sobre a classe majoritária**, e não a diferença
+contra a baseline ingênua. Dos 797 municípios avaliados, 443 (55,6%) atingiram a meta,
+de modo que apostar que todos atingem já acerta 55,6% sem modelo algum. Precisão e F1
+dessa referência são zero por construção, porque ela nunca emite alerta.
+
+A baseline ingênua é **pior que a classe majoritária**: com 0,4780 ela sobre-alerta,
+tendo recall de 0,7994 e precisão de 0,4506. Sinaliza quase todo mundo e por isso quase
+não informa. Citar apenas a comparação contra ela inflaria o ganho aparente, e foi
+exatamente esse o erro corrigido nesta revisão.
 
 **Escopo:** 797 dos 828 municípios do conjunto de teste; 31 foram descartados por não
 terem meta publicada. Todos são municípios inéditos, ausentes do treino e da validação.
