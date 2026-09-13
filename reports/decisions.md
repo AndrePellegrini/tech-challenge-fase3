@@ -296,7 +296,7 @@ Detalhes em [Protocolo congelado](final_model_protocol.md) e
 
 ## DEC-013 — Estratégia de interpretabilidade
 
-**Status:** Feature Importance do modelo final concluída; SHAP permanece pendente.
+**Status:** Concluída. Feature Importance e SHAP executados sobre o modelo final.
 
 **Classificação:** curricular complementar/recomendado e decisão de execução do grupo.
 
@@ -305,12 +305,41 @@ codificadas para as 16 features de origem, de modo que as categorias one-hot de
 `rede` e `sigla_uf` não apareçam fragmentadas. Resultado em
 `final_feature_importance.csv`.
 
-SHAP não foi executado. A execução depende do modelo serializado, que não é
-versionado, e do parquet de modelagem, que também não é. Com o ambiente montado o
-custo é baixo para uma floresta de 40 árvores e profundidade 10. Permanece como
-pendência explícita, e não como decisão de descarte.
+SHAP foi executado com `shap.TreeExplainer` sobre 8.000 linhas da validação, usando
+o modelo congelado carregado sem refit. O conjunto de teste não foi materializado. O
+modelo regenerado teve SHA-256 idêntico ao registrado na avaliação final, de modo que
+o SHAP explica exatamente o modelo avaliado, e não um equivalente re-treinado.
 
-Nenhuma importância recebe interpretação causal.
+**Por que dois métodos e não um:** a importância nativa de árvores mede redução de
+impureza e é sensível à correlação entre preditores — situação exata deste projeto,
+em que as seis features educacionais de 2023 medem facetas do mesmo fenômeno
+municipal. O SHAP atribui contribuição marginal por predição. Onde os dois divergem,
+há sinal.
+
+A correlação de Spearman entre os rankings é de 0,8559, ou seja, eles divergem.
+
+| Feature | Importância nativa | SHAP |
+|---|---:|---:|
+| `sigla_uf` | 8º | 2º |
+| `idhm_educacao` | 7º | 3º |
+| `proficiencia_media_ponderada_2023` | 2º | 7º |
+| `pct_alfabetizados_municipio_2023` | 3º | 6º |
+
+**O caso de `sigla_uf` é o mais relevante.** A única feature puramente territorial
+sobe seis posições. A causa é mecânica: a importância nativa é calculada sobre as
+colunas codificadas, e cada UF vira uma coluna one-hot que isoladamente reduz pouca
+impureza, de modo que a soma subestima o peso do território. O SHAP captura o efeito
+conjunto.
+
+A consequência é analítica, não apenas técnica: **um segundo método, independente,
+confirma a conclusão da auditoria de granularidade (DEC-016)**. O modelo se apoia no
+território mais do que a importância nativa sugeria, o que reforça a leitura de que o
+produto é um instrumento de priorização territorial e não um diagnóstico individual.
+
+Nenhuma importância recebe interpretação causal. Ambos os rankings descrevem como o
+modelo usa as features, não como a alfabetização é produzida.
+
+Resultados em [Interpretabilidade por SHAP](shap_results.md) e `shap_importance.csv`.
 
 ---
 

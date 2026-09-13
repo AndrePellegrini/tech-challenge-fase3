@@ -101,11 +101,19 @@ As ausências são estruturais: municípios sem correspondência no histórico G
 
 Os indicadores educacionais de 2023 são fortemente correlacionados entre si, o que era esperado: medem facetas do mesmo fenômeno municipal.
 
-### Principais achados
+### Alfabetização por quintil de desempenho histórico
 
-- Municípios no quintil inferior de desempenho histórico apresentam taxa de alfabetização de **42,6%**, contra **77,1%** no quintil superior — a maior separação observada na EDA;
-- há gradiente territorial claro entre UFs;
-- o IDHM se associa positivamente ao indicador, mas sua granularidade estadual limita o poder de discriminação entre municípios.
+![Alvo por quintis das features](images/modeling/05_target_by_feature_quantiles.png)
+
+Municípios no quintil inferior apresentam taxa de alfabetização de **42,6%**, contra **77,1%** no quintil superior. É a maior separação observada na EDA, e é ela que sustenta a hipótese central do projeto.
+
+### Gradiente territorial
+
+![Alvo por UF](images/modeling/04_target_by_uf.png)
+
+A diferença entre UFs é grande e sistemática — o primeiro indício de que o sinal disponível é predominantemente territorial, o que a auditoria de granularidade viria a confirmar.
+
+O IDHM se associa positivamente ao indicador, mas sua granularidade estadual limita o poder de discriminação entre municípios.
 
 ---
 
@@ -197,13 +205,30 @@ Onze candidatos foram comparados **usando apenas treino e validação**.
 
 **Por que a regressão logística ficou atrás:** as relações entre indicadores contextuais e o alvo não são lineares no espaço das features, e a padronização esparsa usada para preservar a matriz one-hot não centraliza os dados, o que prejudica a convergência do solver.
 
+### Validação cruzada agrupada
+
+O holdout único não dizia se essas diferenças eram reais ou ruído de partição. `GroupKFold` de 5 folds por `id_municipio` sobre treino e validação — 1.608.082 alunos, 4.689 municípios — foi executado nos quatro finalistas, sem tocar no teste.
+
+| Modelo | AUC média | Desvio | AUC do holdout |
+|---|---:|---:|---:|
+| `random_forest_controlled` | **0,6608** | 0,0079 | 0,6409 |
+| `logistic_baseline` | 0,6560 | 0,0146 | 0,6186 |
+| `decision_tree_d5_l100` | 0,6512 | 0,0114 | 0,6307 |
+| `decision_tree_d10_l100` | 0,6504 | 0,0083 | 0,6302 |
+
+![ROC na validação](images/modeling/final_validation/roc_validation.png)
+
+**A ordem difere da do holdout.** A regressão logística era a última entre os finalistas e aparece em segundo. O holdout único era sensível à partição — exatamente o risco que motivou a execução.
+
+**E a diferença de 0,0047 entre o primeiro e o segundo não supera a dispersão entre folds (0,0166).** Random Forest e regressão logística são estatisticamente indistinguíveis nesta evidência. Isso não invalida a escolha: valida a regra de seleção, que já não se apoiava na ROC AUC isolada e sim no menor gap entre treino e validação. Detalhes em [Validação cruzada](reports/cross_validation_results.md).
+
 ---
 
 ## Métricas de avaliação
 
 **A métrica primária é a ROC AUC.** A tabela acima mostra exatamente por quê: o `dummy_prior`, que prevê a classe majoritária para todo mundo, obtém o **maior F1 de todos os candidatos** (0,7523) enquanto tem AUC de 0,5000, ou seja, zero capacidade de discriminação. Com alvo desbalanceado em 59,8/40,2 e uso final de **ordenação por risco**, métricas dependentes de limiar são enganosas; a ROC AUC mede a qualidade do ordenamento, que é o que o produto analítico realmente entrega.
 
-As métricas de apoio, reportadas por classe, são balanced accuracy, precision, recall e F1. O **gap entre treino e validação** entra como critério de seleção para controlar overfitting.
+As métricas de apoio, reportadas por classe, são balanced accuracy, precision, recall e F1. O **gap entre treino e validação** entra como critério de seleção para controlar overfitting, e a **dispersão entre folds da validação cruzada** delimita a faixa dentro da qual comparações de AUC não são conclusivas.
 
 **Não há limiar operacional congelado.** O valor 0,50 aparece apenas como referência descritiva. A decisão de não fixar limiar foi tomada após auditoria semântica: a escolha do corte depende do custo relativo entre deixar de sinalizar um território em risco e gerar alarme falso, e essa é uma decisão de política pública, não estatística.
 
@@ -223,7 +248,15 @@ O teste contém **243.746 alunos de 828 municípios** ausentes do treino e da va
 
 ![Curva ROC no teste](images/modeling/final_test/roc_final_test.png)
 
-A diferença de **+0,0222** é classificada como moderada pelo próprio protocolo. O teste ficou **acima** da validação, o que afasta overfitting de seleção e indica uma partição de teste marginalmente mais favorável — a estimativa de generalização deve ser lida com essa ressalva.
+A diferença de **+0,0222** foi classificada como moderada pelo protocolo, e a leitura natural seria suspeitar de uma partição de teste favorável. **A validação cruzada mostra que a explicação é outra.**
+
+| Estimativa | ROC AUC |
+|---|---:|
+| Holdout de validação, partição única | 0,6409 |
+| **Validação cruzada, média de 5 folds** | **0,6608** ± 0,0079 |
+| Teste, abertura única | 0,6631 |
+
+A média da validação cruzada fica a **0,0023** do teste, dentro de um desvio-padrão entre folds, enquanto o holdout isolado ficou 0,0199 abaixo. Ou seja: **a partição de validação era pessimista, não a de teste favorável.** A melhor estimativa de generalização é a média da validação cruzada, e o resultado do teste é coerente com ela — o que reforça, em vez de enfraquecer, a validade da avaliação final.
 
 No limiar descritivo 0,50, a balanced accuracy foi 0,5832 e, para a classe de risco, precision/recall/F1 foram 0,5609/0,3426/0,4254.
 
@@ -245,13 +278,17 @@ Existem apenas **6.430 perfis distintos de features** para 1.851.828 alunos. Nen
 
 E **99,82% dos alunos** estão em perfis "mistos", em que o mesmo vetor de features corresponde a alunos alfabetizados e não alfabetizados. Cerca de **90% da variabilidade do alvo ocorre dentro dos contextos**, não entre eles.
 
+![Incerteza nos perfis mistos](images/modeling/granularity/03_mixed_profile_uncertainty.png)
+
 A consequência é direta: qualquer classificador determinístico tem teto baixo aqui. O teto empírico de acurácia por voto majoritário no perfil é de **0,6482**. O modelo não está longe do limite do que essas features permitem.
 
 **A leitura correta, portanto, é territorial:** o que o modelo produz é uma estimativa de risco contextual do município e da rede, não um diagnóstico individual. Detalhes em [Auditoria de granularidade](reports/granularity_audit.md).
 
 ### Interpretabilidade
 
-Importância nativa da Random Forest final, reagregada das 43 colunas codificadas para as 16 features de origem:
+![Importância das features](images/modeling/07_feature_importance.png)
+
+Importância nativa reagregada das 43 colunas codificadas para as 16 features de origem:
 
 | Feature | Importância |
 |---|---:|
@@ -266,7 +303,26 @@ Importância nativa da Random Forest final, reagregada das 43 colunas codificada
 
 Ranking completo em `reports/final_feature_importance.csv`.
 
-**SHAP não foi executado.** A execução depende do modelo serializado e do parquet de modelagem, e nenhum dos dois é versionado. Permanece como pendência explícita, não como decisão de descarte. Nenhuma importância recebe interpretação causal.
+#### SHAP
+
+`shap.TreeExplainer` foi aplicado ao modelo congelado, sobre 8.000 linhas da validação. O teste não foi materializado.
+
+![Contribuição SHAP por feature](images/modeling/shap/01_shap_importance.png)
+
+A correlação de Spearman entre o ranking SHAP e o da importância nativa é de **0,8559** — ou seja, eles divergem, e a divergência é informativa.
+
+| Feature | Importância nativa | SHAP |
+|---|---:|---:|
+| `sigla_uf` | 8º | **2º** |
+| `idhm_educacao` | 7º | 3º |
+| `proficiencia_media_ponderada_2023` | 2º | 7º |
+| `pct_alfabetizados_municipio_2023` | 3º | 6º |
+
+**O caso de `sigla_uf` é o mais relevante.** A única feature puramente territorial salta seis posições. A causa é mecânica: a importância nativa é calculada sobre colunas codificadas, e cada UF vira uma coluna one-hot que isoladamente reduz pouca impureza, de modo que a soma subestima o peso do território. O SHAP mede contribuição marginal e captura o efeito conjunto.
+
+A consequência importa para a tese do projeto: **um segundo método, independente, confirma a conclusão da auditoria de granularidade.** O modelo se apoia no território mais do que a importância nativa sugeria.
+
+Nenhum dos dois rankings é causal. Ambos descrevem como o modelo usa as features, não como a alfabetização é produzida. Detalhes em [Interpretabilidade por SHAP](reports/shap_results.md).
 
 ---
 
@@ -289,6 +345,8 @@ K-means sobre 5.517 municípios, avaliando `k=2..6`. Escolhido **k=2**, com Silh
 ![Tamanho dos clusters](images/modeling/clustering/02_cluster_sizes.png)
 
 ![Centroides padronizados](images/modeling/clustering/03_standardized_centroids.png)
+
+![Clusters no espaço PCA](images/modeling/clustering/04_pca_clusters.png)
 
 O agrupamento separa 3.371 municípios de contexto mais favorável de 2.146 com maior vulnerabilidade relativa. O segundo perfil tem risco médio pós-hoc de 0,4890, contra 0,2936 no primeiro. Na prática a divisão é próxima de um corte Sul/Sudeste contra Norte/Nordeste — interpretável, porém de granularidade baixa para priorização fina. Detalhes em [Clustering municipal](reports/municipal_clustering_results.md).
 
@@ -316,7 +374,7 @@ Note que a baseline ingênua é *pior* que a classe majoritária: ela sobre-aler
 
 ### Quais variáveis possuem maior influência nos modelos?
 
-Ver a tabela de importância na seção de interpretação. Com a ressalva de que SHAP não foi executado, a leitura de influência se apoia na importância nativa da floresta, que é associativa e sensível a correlação entre preditores — e os indicadores de 2023 são fortemente correlacionados entre si.
+Dois métodos independentes foram usados: a importância nativa da floresta e o SHAP. Eles concordam no topo — `media_portugues_municipio_2023` lidera nos dois — mas divergem no meio do ranking, e a divergência aponta para o território: `sigla_uf` sobe do 8º para o 2º lugar sob SHAP. Ver a seção de interpretabilidade. Nenhum dos rankings é causal.
 
 ---
 
@@ -363,13 +421,13 @@ O produto entregue não é "a previsão de um aluno". É um **instrumento de pri
 - Parte das features tem granularidade municipal, de rede ou estadual, enquanto o alvo é individual;
 - alunos do mesmo município e rede compartilham o mesmo vetor e recebem a mesma probabilidade — o modelo representa risco contextual, não diagnóstico individual;
 - os indicadores socioeconômicos disponíveis têm granularidade estadual: 27 valores de IDHM para 5.570 municípios;
-- **não foi executada validação cruzada agrupada**; com holdout único não há estimativa de variância entre folds, e diferenças de AUC na casa de 0,002 entre candidatos próximos não são estatisticamente distinguíveis;
+- a validação cruzada cobriu os quatro finalistas, não os onze candidatos, por custo computacional;
+- a dispersão entre folds mostra que Random Forest e regressão logística são estatisticamente indistinguíveis, de modo que a escolha do modelo final se apoia nos critérios de desempate e não na ROC AUC;
 - a otimização de hiperparâmetros usou grade manual pequena e definida a priori;
-- a diferença de AUC entre teste e validação é de +0,0222, classificada como moderada;
-- **SHAP não foi executado**;
+- a interpretabilidade por SHAP usa amostra de 8.000 linhas da validação, não a partição inteira;
 - os indicadores educacionais são de 2023 e o alvo é de 2024;
 - as associações não representam relações causais;
-- **a reprodução completa da pipeline exige credenciais de leitura no bucket S3 privado da equipe**; sem elas é possível executar a suíte de testes e a análise de risco de meta, mas não regenerar o dataset de modelagem;
+- a regeneração do dataset completo exige credenciais de leitura no bucket S3 privado da equipe; sem elas é possível executar a suíte de testes e toda a pipeline sobre a amostra anonimizada versionada, mas não reproduzir as 1.851.828 linhas;
 - a POC com Censo Escolar teve cobertura zero por incompatibilidade de chave, e a fonte não foi incorporada.
 
 Lista completa em [Limitações da modelagem](reports/modeling_limitations.md).
@@ -381,10 +439,10 @@ Lista completa em [Limitações da modelagem](reports/modeling_limitations.md).
 ```text
 tech-challenge-fase3/
 │
-├── data/                  # artefatos locais, não versionados
-│   ├── raw/
-│   ├── processed/
-│   └── gold/
+├── data/
+│   ├── raw/               # não versionado
+│   ├── processed/         # amostra anonimizada versionada; dataset completo não
+│   └── gold/              # não versionado
 │
 ├── notebooks/
 │   ├── 00_test_build_modeling_dataset.ipynb
@@ -397,7 +455,7 @@ tech-challenge-fase3/
 │   ├── evaluation/        # métricas compartilhadas
 │   └── visualization/     # primitivas de gráfico
 │
-├── tests/                 # 96 testes automatizados
+├── tests/                 # 134 testes automatizados
 ├── reports/               # documentação técnica, decisões e resultados
 ├── images/                # gráficos gerados pelos scripts
 ├── conftest.py
@@ -408,11 +466,18 @@ tech-challenge-fase3/
 
 ### Testes
 
-O projeto tem **96 testes automatizados** cobrindo contrato do dataset, integridade do split, ausência de vazamento, pré-processamento, auditorias e visualização. Todos usam dados sintéticos ou mocks: **nenhum depende de credencial, S3 ou BigQuery**.
+O projeto tem **134 testes automatizados** cobrindo contrato do dataset, integridade do split, ausência de vazamento, pré-processamento, validação cruzada, SHAP, amostragem, auditorias e visualização. Todos usam dados sintéticos ou mocks: **nenhum depende de credencial, S3 ou BigQuery**.
 
 ```bash
 pytest tests -q
 ```
+
+A suíte passa em dois ambientes distintos, o que dá alguma garantia contra quebra por versão:
+
+| Ambiente | pandas | scikit-learn | Resultado |
+|---|---|---|---|
+| Atual | 3.0.5 | 1.9.1 | 134 ✓ |
+| Da execução original | 2.3.3 | 1.9.0 | 134 ✓ |
 
 Destacam-se os testes que protegem a validade metodológica: um inverte o target e exige split idêntico, provando que o alvo não influencia a divisão; outro inspeciona o código-fonte da validação para garantir que ele nunca referencia o conjunto de teste; um terceiro verifica que o bloqueio de reabertura do teste vem antes de qualquer materialização dos dados.
 
@@ -420,20 +485,40 @@ Destacam-se os testes que protegem a validade metodológica: um inverte o target
 
 ## Reprodutibilidade
 
+### Determinismo verificado
+
+O dataset e o modelo foram regenerados do zero, em ambiente com as versões da execução original, e conferidos contra os hashes registrados em `reports/final_test_metrics.json`:
+
+| Artefato | SHA-256 |
+|---|---|
+| `modeling_dataset_2024_gold.parquet` | **idêntico** |
+| `final_candidate_validation.joblib` | **idêntico** |
+
+As onze ROC AUC de validação reproduziram exatamente. **A pipeline é determinística bit a bit** — mesma entrada, mesmo artefato.
+
 ### O que roda sem credencial alguma
 
-Um avaliador externo consegue executar, a partir de um clone limpo:
+Um avaliador externo consegue executar tudo isto a partir de um clone limpo:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
 
-pytest tests -q                              # 96 testes
+pytest tests -q                              # 134 testes
 python -m src.modeling.goal_risk_analysis    # risco de meta 2024
 ```
 
-A análise de risco de meta consome apenas artefatos versionados no repositório e regenera o relatório, o ranking e os gráficos.
+E a pipeline de modelagem inteira sobre a **amostra anonimizada versionada**:
+
+```powershell
+$env:MODELING_DATASET_PATH = "data/processed/sample_modeling_dataset.parquet"
+python -m src.modeling.cross_validation
+```
+
+A amostra tem 53.854 alunos de 161 municípios, 0,94 MB, cobrindo as 24 UFs presentes no dataset. A amostragem é **por município**, não por aluno, porque o split é agrupado e amostrar alunos soltos o inviabilizaria. `id_aluno` e `id_escola` são substituídos por hash; `id_municipio` é preservado por ser código público do IBGE.
+
+> A amostra serve para **verificar a execução da pipeline**. Os resultados oficiais do projeto vêm do dataset completo de 1.851.828 linhas, que não é versionado. Números obtidos sobre a amostra não são comparáveis aos do relatório.
 
 ### O que exige credencial AWS
 
@@ -447,6 +532,8 @@ python -m src.modeling.train_baselines
 python -m src.modeling.final_validation
 python -m src.modeling.municipal_clustering
 ```
+
+Para regenerar a própria amostra: `python -m src.preprocessing.build_sample`.
 
 O caminho de BigQuery/Base dos Dados permanece como alternativa legada e opcional; `basedosdados` é a única dependência exclusiva dele, e o teste correspondente é pulado automaticamente quando o pacote não está instalado.
 
@@ -469,18 +556,19 @@ Semente 42 em todo o fluxo; o pipeline treinado é serializado inteiro; e `repor
 - [x] Seleção e congelamento do modelo final
 - [x] Abertura única do conjunto de teste
 - [x] Interpretabilidade por Feature Importance
+- [x] Interpretabilidade por SHAP
+- [x] Validação cruzada agrupada por município
 - [x] Clustering municipal
 - [x] Projeção de risco de não atingimento de meta
+- [x] Amostra anonimizada versionada para reprodução sem credencial
 - [x] Documentação técnica e decisões analíticas
-- [ ] SHAP — depende do modelo serializado e do parquet, não versionados
 - [ ] Apresentação e vídeo executivo
 
 ---
 
 ## Possíveis evoluções futuras
 
-- **Validação cruzada agrupada** por município, para dar intervalo de confiança às comparações entre modelos — é a lacuna metodológica mais relevante;
-- **SHAP** sobre amostra da validação, barato para uma floresta de 40 árvores;
+- **estender a validação cruzada aos onze candidatos**, e não apenas aos quatro finalistas, agora que o custo por ajuste está medido;
 - **granularidade socioeconômica municipal**, substituindo o IDHM estadual, que é hoje o gargalo mais claro de poder preditivo;
 - **atributos escolares**, via fonte com chave compatível, para introduzir variação dentro do município e romper o teto de granularidade;
 - **série histórica** a partir de `evolucao_temporal_indicador`, permitindo features de tendência em vez de corte único;
@@ -506,6 +594,8 @@ Python, Pandas, NumPy, Scikit-learn, Matplotlib, Jupyter Notebook, Parquet, Amaz
 | [Protocolo do modelo final](reports/final_model_protocol.md) | hiperparâmetros congelados antes do teste |
 | [Resultados de validação](reports/final_validation_results.md) | comparação dos onze candidatos |
 | [Avaliação final](reports/final_test_results.md) | abertura única do teste |
+| [Validação cruzada](reports/cross_validation_results.md) | dispersão entre folds e o que ela explica |
+| [Interpretabilidade por SHAP](reports/shap_results.md) | ranking SHAP contra importância nativa |
 | [Risco de meta 2024](reports/goal_risk_2024.md) | projeção de não atingimento e auditoria |
 | [Clustering municipal](reports/municipal_clustering_results.md) | perfis territoriais |
 | [Auditoria de granularidade](reports/granularity_audit.md) | por que a AUC fica em 0,66 |
@@ -513,3 +603,4 @@ Python, Pandas, NumPy, Scikit-learn, Matplotlib, Jupyter Notebook, Parquet, Amaz
 | [Auditoria de candidatas](reports/feature_candidate_audit.md) | features avaliadas e descartadas |
 | [Viabilidade do Censo Escolar](reports/censo_escolar_feasibility.md) | POC de enriquecimento externo |
 | [Limitações da modelagem](reports/modeling_limitations.md) | restrições de interpretação e uso |
+| `reports/sample_dataset_summary.json` | representatividade da amostra versionada |
