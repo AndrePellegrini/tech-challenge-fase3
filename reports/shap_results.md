@@ -48,9 +48,9 @@ Divergência é esperada e informativa. A importância nativa distribui o crédi
 
 A divergência mais informativa é a da única feature puramente territorial: `sigla_uf` aparece em 8º lugar pela importância nativa e em 2º pelo SHAP, um salto de 6 posições.
 
-A explicação é mecânica. A importância nativa é calculada sobre as colunas codificadas: cada UF vira uma coluna one-hot que isoladamente reduz pouca impureza, e a soma dessas parcelas subestima o quanto o território importa. O SHAP mede contribuição marginal por predição, então captura o efeito conjunto de saber em que UF o aluno está.
+Os dois métodos não são diretamente equivalentes e distribuem crédito de forma diferente. A importância nativa mede redução de impureza e é sensível tanto à correlação entre preditores quanto à forma como as categorias codificadas entram nas árvores; o SHAP mede contribuição marginal por predição. Onde os preditores são correlacionados — o caso das seis features educacionais de 2023 —, é esperado que as ordenações divirjam.
 
-A consequência analítica é relevante: **um segundo método, independente, confirma a conclusão da auditoria de granularidade**. O modelo se apoia mais no território do que a importância nativa sugeria, o que reforça a leitura de que o produto é um instrumento de priorização territorial e não um diagnóstico individual.
+A leitura prudente é que o maior posto de `sigla_uf` sob SHAP **reforça a evidência de dependência territorial**, já apontada pela auditoria de granularidade, sem que se possa afirmar que um dos métodos mede o território de forma mais correta que o outro.
 
 ## Correlação entre os rankings
 

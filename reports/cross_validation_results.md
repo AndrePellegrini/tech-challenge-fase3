@@ -3,6 +3,10 @@
 Fecha a lacuna da DEC-010. O holdout único não permitia dizer se as diferenças de ROC
 AUC entre os finalistas eram reais ou ruído de partição.
 
+Trata-se de **análise pós-hoc de robustez**: foi executada após a seleção do modelo e
+após a abertura do teste, sem acessá-lo. Não reescreve a história da escolha, que se
+deu sobre o holdout.
+
 ## Método
 
 `GroupKFold` com 5 folds, agrupado por `id_municipio`, sobre a união de treino
@@ -27,7 +31,9 @@ de ROC AUC entre primeiro e segundo colocado.
 | `decision_tree_d5_l100` | 0.6512 | 0.0114 | 0.6351 | 0.6637 | 0.6307 |
 | `decision_tree_d10_l100` | 0.6504 | 0.0083 | 0.6401 | 0.6625 | 0.6302 |
 
-A diferença de 0.0047 entre `random_forest_controlled` e `logistic_baseline` **não supera** a dispersão combinada entre folds (0.0166). Os dois são estatisticamente indistinguíveis nesta evidência, e a escolha se justifica pelos critérios de desempate da DEC-012, não pela ROC AUC isolada.
+A diferença de 0.0047 entre `random_forest_controlled` e `logistic_baseline` é **pequena diante da dispersão observada entre folds** (0.0166). Com esta evidência não há separação clara entre os dois, e a escolha se justifica pelos critérios de desempate da DEC-012, não pela ROC AUC isolada.
+
+A comparação é descritiva: não foi aplicado teste pareado por fold, bootstrap da diferença nem intervalo de confiança, de modo que não se afirma equivalência estatística.
 
 A ordem dos finalistas **difere** da do holdout, que foi `random_forest_controlled` > `decision_tree_d5_l100` > `decision_tree_d10_l100` > `logistic_baseline`. A divergência é em si um resultado: indica que o holdout único era sensível à partição, exatamente o risco que motivou esta validação cruzada.
 
@@ -50,14 +56,18 @@ A média da validação cruzada fica a **0.0023** do teste, dentro de
 um desvio-padrão entre folds. Já o holdout isolado ficou 0.0199
 abaixo dessa média.
 
-**A conclusão é que a partição de validação era pessimista, não que a de teste fosse
-otimista.** A estimativa de generalização do modelo é mais bem representada pela média
-da validação cruzada, e o resultado do teste está coerente com ela. Isso reforça, e não
+**A proximidade entre a média da validação cruzada e o teste indica que o resultado do
+teste é compatível com a variabilidade territorial observada no desenvolvimento.** A
+média da validação cruzada é a estimativa de generalização mais representativa, e o
+holdout isolado aparenta ter caído numa partição desfavorável. Isso reforça, e não
 enfraquece, a validade da avaliação final.
 
-Registro metodológico: a validação cruzada foi executada sem qualquer acesso ao
-conjunto de teste. A AUC de teste usada aqui vem de `final_test_metrics.json`, artefato
-publicado na ocasião da abertura única, e a comparação é estritamente posterior.
+Registro metodológico, importante para a leitura correta: esta validação cruzada é uma
+**análise pós-hoc de robustez**. Ela foi executada depois da abertura única do teste e
+**não participou da seleção do modelo**, que ocorreu antes, sobre o holdout de
+validação. A validação cruzada não acessa o conjunto de teste em nenhum momento; a AUC
+de teste citada vem de `final_test_metrics.json`, artefato publicado na ocasião da
+abertura, e a comparação é estritamente posterior.
 
 ## Por fold
 

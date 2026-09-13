@@ -6,8 +6,12 @@ futuras"*.
 ## Método
 
 A probabilidade média de alfabetização prevista pelo modelo congelado é usada como
-estimativa da taxa municipal de 2024 e comparada com a meta do município. Quando a
-projeção fica abaixo da meta, o município recebe alerta de risco de não atingimento.
+**taxa municipal implícita** para 2024 e comparada com a meta do município. Quando fica
+abaixo da meta, o município recebe alerta de risco de não atingimento.
+
+A leitura como taxa depende de as probabilidades estarem calibradas, o que foi
+verificado separadamente: viés de -0,0051 e desvio por decil abaixo de 0,0255 no nível
+municipal. Ver [Calibração da taxa municipal](calibration_municipal.md).
 
 A base é `reports/final_test_municipal_analysis.csv`, restrita aos
 797 municípios do conjunto de teste que possuem meta
@@ -84,7 +88,8 @@ Ranking completo em `goal_risk_ranking.csv`; números consolidados em
 ## Limitações
 
 O alerta é uma projeção associativa, não uma previsão oficial de cumprimento de meta.
-A taxa projetada é a média das probabilidades individuais previstas dentro do
+É uma análise pós-hoc sobre municípios inéditos, e não um exercício de previsão temporal
+para anos futuros. A taxa implícita é a média das probabilidades individuais dentro do
 município, e o modelo é predominantemente territorial: alunos do mesmo município e
 rede recebem a mesma probabilidade. A projeção herda, portanto, todas as limitações
 registradas em `modeling_limitations.md`.

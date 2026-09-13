@@ -18,15 +18,18 @@
 - A análise municipal deriva previsões individuais de validação e não representa
   estimativa oficial de cumprimento de metas.
 - A validação cruzada agrupada foi executada nos quatro finalistas, não nos onze
-  candidatos, por custo computacional. A dispersão entre folds mostra que Random
-  Forest e regressão logística são estatisticamente indistinguíveis, de modo que a
-  escolha do modelo final se apoia nos critérios de desempate e não na ROC AUC.
+  candidatos, por custo computacional. Ela é uma análise pós-hoc de robustez: veio
+  depois da seleção e da abertura do teste, sem acessá-lo.
+- A diferença entre Random Forest e regressão logística é pequena diante da
+  dispersão entre folds, de modo que não há separação clara entre os dois. A
+  comparação é descritiva, sem teste pareado ou bootstrap, e a escolha do modelo
+  final se apoia nos critérios de desempate e não na ROC AUC.
 - A otimização de hiperparâmetros usou grade manual pequena e definida a priori,
   sem busca automatizada; não há garantia de que o ótimo esteja contido nela.
 - A diferença de ROC AUC entre teste (0,6631) e validação (0,6409) é de +0,0222.
-  A validação cruzada esclareceu a origem: sua média é 0,6608, a 0,0023 do teste,
-  o que indica partição de validação pessimista e não partição de teste favorável.
-  A melhor estimativa de generalização é a média da validação cruzada.
+  A média da validação cruzada é 0,6608, a 0,0023 do teste, o que indica resultado
+  compatível com a variabilidade territorial observada no desenvolvimento. A melhor
+  estimativa de generalização é a média da validação cruzada.
 - A interpretabilidade por SHAP usa amostra de 8.000 linhas da validação, não a
   partição inteira. O ranking é associativo e descreve como o modelo usa as
   features, não como a alfabetização é produzida.

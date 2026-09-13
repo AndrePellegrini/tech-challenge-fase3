@@ -109,8 +109,8 @@ def territorial_note(comparison: pd.DataFrame) -> str:
     """Destaca o caso de `sigla_uf`, se ele subir no ranking do SHAP.
 
     É a divergência mais informativa do projeto: a variável puramente territorial
-    ganhar posições confirma, por um segundo método independente, a conclusão da
-    auditoria de granularidade.
+    ganhar posições reforça, por um segundo método, a evidência de dependência
+    territorial apontada pela auditoria de granularidade.
     """
     row = comparison.loc[comparison["feature"].eq("sigla_uf")]
     if row.empty:
@@ -124,16 +124,16 @@ def territorial_note(comparison: pd.DataFrame) -> str:
         f"`sigla_uf` aparece em {int(row['rank_nativa'])}º lugar pela importância nativa "
         f"e em {int(row['rank_shap'])}º pelo SHAP, um salto de "
         f"{int(row['deslocamento'])} posições.\n\n"
-        f"A explicação é mecânica. A importância nativa é calculada sobre as colunas "
-        f"codificadas: cada UF vira uma coluna one-hot que isoladamente reduz pouca "
-        f"impureza, e a soma dessas parcelas subestima o quanto o território importa. "
-        f"O SHAP mede contribuição marginal por predição, então captura o efeito "
-        f"conjunto de saber em que UF o aluno está.\n\n"
-        f"A consequência analítica é relevante: **um segundo método, independente, "
-        f"confirma a conclusão da auditoria de granularidade**. O modelo se apoia mais "
-        f"no território do que a importância nativa sugeria, o que reforça a leitura de "
-        f"que o produto é um instrumento de priorização territorial e não um "
-        f"diagnóstico individual.\n"
+        f"Os dois métodos não são diretamente equivalentes e distribuem crédito de "
+        f"forma diferente. A importância nativa mede redução de impureza e é sensível "
+        f"tanto à correlação entre preditores quanto à forma como as categorias "
+        f"codificadas entram nas árvores; o SHAP mede contribuição marginal por "
+        f"predição. Onde os preditores são correlacionados — o caso das seis features "
+        f"educacionais de 2023 —, é esperado que as ordenações divirjam.\n\n"
+        f"A leitura prudente é que o maior posto de `sigla_uf` sob SHAP **reforça a "
+        f"evidência de dependência territorial**, já apontada pela auditoria de "
+        f"granularidade, sem que se possa afirmar que um dos métodos mede o território "
+        f"de forma mais correta que o outro.\n"
     )
 
 

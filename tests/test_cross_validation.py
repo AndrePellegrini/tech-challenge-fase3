@@ -153,8 +153,19 @@ class SummaryTests(unittest.TestCase):
             "roc_auc_std": [.02, .02],
         })
         verdict = separation_verdict(summary)
-        self.assertIn("não supera", verdict)
-        self.assertIn("indistinguíveis", verdict)
+        self.assertIn("pequena diante da dispersão", verdict)
+        self.assertIn("não há separação clara", verdict)
+
+    def test_inconclusive_verdict_does_not_claim_statistical_equivalence(self):
+        """A comparacao e descritiva: nao houve teste pareado nem bootstrap."""
+        summary = pd.DataFrame({
+            "model": ["a", "b"],
+            "roc_auc_mean": [.6409, .6407],
+            "roc_auc_std": [.02, .02],
+        })
+        verdict = separation_verdict(summary)
+        self.assertNotIn("indistinguíveis", verdict)
+        self.assertIn("não se afirma equivalência estatística", verdict)
 
     def test_single_candidate_is_not_compared(self):
         summary = pd.DataFrame({"model": ["a"], "roc_auc_mean": [.7], "roc_auc_std": [.01]})

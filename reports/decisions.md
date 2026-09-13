@@ -195,7 +195,14 @@ em [Validação final](final_validation_results.md) e `final_model_comparison.cs
 
 ## DEC-010 — Estratégia de validação cruzada
 
-**Status:** Executada. `GroupKFold` de 5 folds sobre treino e validação.
+**Status:** Executada como análise pós-hoc de robustez. `GroupKFold` de 5 folds sobre
+treino e validação.
+
+**Registro de cronologia, importante para a leitura correta:** esta validação cruzada
+foi executada **depois** da seleção do modelo e **depois** da abertura única do teste.
+Ela não acessa o conjunto de teste em momento algum, e não participou da escolha do
+modelo final, que se deu sobre o holdout de validação. Não reescreve a história da
+seleção; acrescenta evidência sobre a robustez daquela decisão.
 
 **Classificação:** decisão metodológica do grupo.
 
@@ -224,9 +231,11 @@ a última entre eles no holdout e aparece em segundo na validação cruzada. O h
 único era, portanto, sensível à partição — exatamente o risco que motivou esta
 execução.
 
-Segundo, a diferença de 0,0047 entre o primeiro e o segundo colocado **não supera** a
-dispersão combinada entre folds (0,0166). Random Forest e regressão logística são
-estatisticamente indistinguíveis nesta evidência. A escolha do modelo final se
+Segundo, a diferença de 0,0047 entre o primeiro e o segundo colocado é **pequena
+diante da dispersão observada entre folds** (0,0166), de modo que não há separação clara
+entre Random Forest e regressão logística. A comparação é descritiva: não foi aplicado
+teste pareado por fold, bootstrap da diferença nem intervalo de confiança, então não se
+afirma equivalência estatística. A escolha do modelo final se
 sustenta pelos critérios de desempate da DEC-012 — menor gap entre treino e validação
 e maior estabilidade das probabilidades agregadas —, e não pela ROC AUC isolada.
 
@@ -234,7 +243,8 @@ e maior estabilidade das probabilidades agregadas —, e não pela ROC AUC isola
 0,0023 da AUC de teste (0,6631), dentro de um desvio-padrão entre folds, enquanto o
 holdout de validação ficou 0,0199 abaixo. Isso esclarece a diferença de +0,0222 entre
 teste e validação que o protocolo havia classificado como moderada: a partição de
-validação era pessimista, e não a de teste favorável.
+resultado do teste é compatível com a variabilidade territorial observada entre folds,
+e que o holdout aparenta ter caído numa partição desfavorável.
 
 Resultados completos em [Validação cruzada](cross_validation_results.md).
 
@@ -273,7 +283,9 @@ estimadores, profundidade máxima 10, folha mínima 200, `max_features="sqrt"` e
 **Regra de seleção:** entre os candidatos a até 0,002 da melhor ROC AUC de
 validação, prefere-se o de menor gap treino/validação; depois maior F1; depois
 menor tempo de treino. A regra evita escolher por diferenças de AUC dentro do
-ruído, coerente com a ausência de validação cruzada (DEC-010).
+ruído, precaução pertinente a uma seleção apoiada em holdout de partição única. A
+validação cruzada posterior (DEC-010) confirmou que diferenças pequenas entre os
+finalistas ficam dentro da variabilidade entre folds.
 
 **Resultado em validação:** ROC AUC 0,6409, gap treino/validação 0,0343. Os
 concorrentes mais próximos foram `decision_tree_d5_l100` (0,6307, gap 0,0310) e
@@ -532,3 +544,51 @@ combinado com o ranking de risco absoluto.
 
 Resultados em [Risco de meta 2024](goal_risk_2024.md), `goal_risk_ranking.csv` e
 `goal_risk_summary.json`.
+
+---
+
+## DEC-020 — Calibração da taxa municipal implícita
+
+**Status:** Verificada.
+
+**Classificação:** decisão metodológica do grupo, motivada por revisão externa.
+
+**Problema:** a DEC-019 usa a média das probabilidades previstas como taxa municipal.
+Essa leitura só se sustenta se as probabilidades estiverem calibradas. ROC AUC mede
+ordenação: um modelo pode ordenar bem sem que uma previsão de 0,65 corresponda a 65% de
+alfabetizados. Sem verificação, chamar a média de "taxa projetada" seria afirmação não
+sustentada.
+
+**Decisão:** medir a calibração em vez de apenas registrar a ressalva, usando o artefato
+municipal já versionado — sem retreino e sem reabrir o teste.
+
+**Resultado**, nos 828 municípios do teste:
+
+| Métrica | Valor |
+|---|---:|
+| Viés | −0,0051 |
+| MAE | 0,0877 |
+| MAE ponderado por aluno | 0,0540 |
+| Correlação de Pearson | 0,7742 |
+| Maior desvio por decil | 0,0255 |
+| Razão de encolhimento | 0,78 |
+
+A taxa implícita acompanha a observada ao longo de toda a faixa, com desvio por decil
+abaixo de 2,6 pontos percentuais. **A projeção está bem calibrada no nível municipal.**
+
+O encolhimento é o comportamento esperado de qualquer modelo: as previsões são
+comprimidas em direção à média, de modo que o ordenamento é confiável mas a amplitude
+entre extremos é subestimada.
+
+**Achado que vale para a leitura do trabalho:** a correlação de 0,7742 no nível
+municipal contrasta com a ROC AUC de 0,6631 no nível do aluno. É a mesma evidência em
+duas escalas — o ruído individual se cancela na agregação e resta o sinal territorial.
+É a evidência mais direta de que o produto é um instrumento de priorização territorial.
+
+**Limitação:** a calibração foi medida no nível de uso, o município. Não foram avaliadas
+calibração individual por curva de confiabilidade ou Brier score, nem aplicada
+recalibração por Platt ou isotônica — desnecessárias diante do viés observado. A medição
+é posterior à abertura do teste e é análise de robustez, não parte do protocolo de
+seleção.
+
+Resultados em [Calibração da taxa municipal](calibration_municipal.md).

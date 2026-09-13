@@ -29,6 +29,8 @@ A variável-alvo `alfabetizado` assume:
 
 O modelo estima a condição de alfabetização individual usando informações históricas e contextuais, **sem utilizar o resultado contemporâneo da avaliação do próprio aluno**.
 
+> **Ressalva que atravessa todo o projeto.** O alvo é individual, mas as features disponíveis são predominantemente contextuais — de município, rede e UF. Alunos do mesmo contexto recebem o mesmo vetor de entrada e, portanto, a mesma probabilidade. A leitura operacional do resultado é **territorial**, não um diagnóstico por criança. A seção [Interpretação dos resultados](#interpretação-dos-resultados) quantifica isso.
+
 A hipótese central é que a combinação entre histórico educacional do município e da rede, contexto territorial, indicadores socioeconômicos e metas educacionais contém informação relevante para estimar a probabilidade de alfabetização individual.
 
 ---
@@ -199,7 +201,7 @@ Onze candidatos foram comparados **usando apenas treino e validação**.
 
 **Modelo escolhido:** `RandomForestClassifier` com `n_estimators=40`, `max_depth=10`, `min_samples_leaf=200`, `max_features="sqrt"`, `n_jobs=2` e `random_state=42`.
 
-**Regra de seleção:** entre os candidatos a até 0,002 da melhor ROC AUC, prefere-se o de menor gap treino/validação, depois maior F1, depois menor tempo. A regra evita escolher por diferenças de AUC dentro do ruído — precaução necessária porque não houve validação cruzada (DEC-010).
+**Regra de seleção:** entre os candidatos a até 0,002 da melhor ROC AUC, prefere-se o de menor gap treino/validação, depois maior F1, depois menor tempo. A regra evita escolher por diferenças de AUC dentro do ruído — precaução tomada porque a seleção se apoiava num holdout de partição única (DEC-010). A validação cruzada, executada depois, confirmou que a precaução era pertinente.
 
 **Por que a Random Forest e não a árvore simples:** a floresta tem a melhor AUC com gap comparável ao da árvore mais rasa, e a agregação de 40 árvores reduz a variância das estimativas de probabilidade, que é o que efetivamente se usa no ranking territorial.
 
@@ -208,6 +210,8 @@ Onze candidatos foram comparados **usando apenas treino e validação**.
 ### Validação cruzada agrupada
 
 O holdout único não dizia se essas diferenças eram reais ou ruído de partição. `GroupKFold` de 5 folds por `id_municipio` sobre treino e validação — 1.608.082 alunos, 4.689 municípios — foi executado nos quatro finalistas, sem tocar no teste.
+
+> Esta é uma **análise pós-hoc de robustez**: foi executada após a seleção do modelo e após a abertura única do teste, sem acessá-lo. Não participou da escolha, que se deu sobre o holdout.
 
 | Modelo | AUC média | Desvio | AUC do holdout |
 |---|---:|---:|---:|
@@ -220,7 +224,7 @@ O holdout único não dizia se essas diferenças eram reais ou ruído de partiç
 
 **A ordem difere da do holdout.** A regressão logística era a última entre os finalistas e aparece em segundo. O holdout único era sensível à partição — exatamente o risco que motivou a execução.
 
-**E a diferença de 0,0047 entre o primeiro e o segundo não supera a dispersão entre folds (0,0166).** Random Forest e regressão logística são estatisticamente indistinguíveis nesta evidência. Isso não invalida a escolha: valida a regra de seleção, que já não se apoiava na ROC AUC isolada e sim no menor gap entre treino e validação. Detalhes em [Validação cruzada](reports/cross_validation_results.md).
+**E a diferença de 0,0047 entre o primeiro e o segundo é pequena diante da dispersão entre folds (0,0166).** Com esta evidência não há separação clara entre Random Forest e regressão logística. A comparação é descritiva — não foi aplicado teste pareado por fold nem bootstrap da diferença —, então não se afirma equivalência estatística. Isso não invalida a escolha: valida a regra de seleção, que já não se apoiava na ROC AUC isolada. Detalhes em [Validação cruzada](reports/cross_validation_results.md).
 
 ---
 
@@ -256,7 +260,7 @@ A diferença de **+0,0222** foi classificada como moderada pelo protocolo, e a l
 | **Validação cruzada, média de 5 folds** | **0,6608** ± 0,0079 |
 | Teste, abertura única | 0,6631 |
 
-A média da validação cruzada fica a **0,0023** do teste, dentro de um desvio-padrão entre folds, enquanto o holdout isolado ficou 0,0199 abaixo. Ou seja: **a partição de validação era pessimista, não a de teste favorável.** A melhor estimativa de generalização é a média da validação cruzada, e o resultado do teste é coerente com ela — o que reforça, em vez de enfraquecer, a validade da avaliação final.
+A média da validação cruzada fica a **0,0023** do teste, dentro de um desvio-padrão entre folds, enquanto o holdout isolado ficou 0,0199 abaixo. **A proximidade entre a média da validação cruzada e o teste indica que o resultado do teste é compatível com a variabilidade territorial observada no desenvolvimento**, e que o holdout aparenta ter caído numa partição desfavorável. A melhor estimativa de generalização é a média da validação cruzada — o que reforça, em vez de enfraquecer, a validade da avaliação final.
 
 No limiar descritivo 0,50, a balanced accuracy foi 0,5832 e, para a classe de risco, precision/recall/F1 foram 0,5609/0,3426/0,4254.
 
@@ -368,6 +372,21 @@ Como o conjunto de teste carrega a taxa efetivamente observada em 2024, **a proj
 | Referência: classe majoritária | 0,5558 | 0,0000 | 0,0000 | 0,0000 |
 | Referência: repetir a taxa de 2023 | 0,4780 | 0,4506 | 0,7994 | 0,5764 |
 
+![Calibração no nível municipal](images/modeling/calibration/01_observado_vs_previsto.png)
+
+Chamar a média das probabilidades de "taxa" só se sustenta se elas estiverem calibradas — ROC AUC mede ordenação, não magnitude. Isso foi verificado:
+
+| Calibração, 828 municípios do teste | Valor |
+|---|---:|
+| Viés (previsto menos observado) | **−0,0051** |
+| Maior desvio por decil | **0,0255** |
+| Correlação de Pearson | **0,7742** |
+| MAE ponderado por aluno | 0,0540 |
+
+A taxa implícita acompanha a observada em toda a faixa, com viés praticamente nulo. Há encolhimento — desvio previsto 0,1471 contra 0,1883 do observado —, o que é esperado e afeta a amplitude entre extremos, não o ordenamento. Detalhes em [Calibração da taxa municipal](reports/calibration_municipal.md).
+
+**E há aqui o contraste que resume o projeto:** correlação de 0,7742 no nível municipal contra ROC AUC de 0,6631 no nível do aluno. Não é contradição, é a mesma evidência em duas escalas — o ruído individual se cancela na agregação e resta o sinal territorial.
+
 O modelo acerta 70,3% dos municípios. A referência correta é a **classe majoritária**: como 443 dos 797 municípios (55,6%) atingiram a meta, apostar que todos atingem já acerta 55,6% sem modelo algum. **O ganho real é de +14,7 pontos.**
 
 Note que a baseline ingênua é *pior* que a classe majoritária: ela sobre-alerta, com recall 0,7994 e precisão 0,4506, sinalizando quase todo mundo. O valor do modelo está em **separar quem realmente corre risco de quem não corre** — algo que nenhuma das duas referências faz. Detalhes em [Risco de meta 2024](reports/goal_risk_2024.md).
@@ -422,7 +441,7 @@ O produto entregue não é "a previsão de um aluno". É um **instrumento de pri
 - alunos do mesmo município e rede compartilham o mesmo vetor e recebem a mesma probabilidade — o modelo representa risco contextual, não diagnóstico individual;
 - os indicadores socioeconômicos disponíveis têm granularidade estadual: 27 valores de IDHM para 5.570 municípios;
 - a validação cruzada cobriu os quatro finalistas, não os onze candidatos, por custo computacional;
-- a dispersão entre folds mostra que Random Forest e regressão logística são estatisticamente indistinguíveis, de modo que a escolha do modelo final se apoia nos critérios de desempate e não na ROC AUC;
+- a diferença entre Random Forest e regressão logística é pequena diante da dispersão entre folds, de modo que não há separação clara entre os dois; a comparação é descritiva, sem teste pareado ou bootstrap, e a escolha do modelo final se apoia nos critérios de desempate e não na ROC AUC;
 - a otimização de hiperparâmetros usou grade manual pequena e definida a priori;
 - a interpretabilidade por SHAP usa amostra de 8.000 linhas da validação, não a partição inteira;
 - os indicadores educacionais são de 2023 e o alvo é de 2024;
@@ -472,7 +491,7 @@ O projeto tem **138 testes automatizados** cobrindo contrato do dataset, integri
 pytest tests -q
 ```
 
-Quatro desses testes cobrem o leitor legado de BigQuery e exigem o pacote `basedosdados`. Com o `requirements.txt` completo instalado, os 138 rodam. Sem esse pacote, o módulo é **pulado automaticamente** em vez de derrubar a coleta, e ficam 137 executados.
+Quatro desses testes cobrem o leitor legado de BigQuery e exigem o pacote `basedosdados`. Com o `requirements.txt` completo instalado, a suíte roda inteira. Sem esse pacote, o módulo é **pulado automaticamente** em vez de derrubar a coleta, e o `pytest` reporta quatro testes a menos com um módulo ignorado.
 
 A suíte passa em ambientes com versões diferentes, o que dá alguma garantia contra quebra por versão:
 
@@ -511,7 +530,7 @@ pytest tests -q                              # 138 testes
 python -m src.modeling.goal_risk_analysis    # risco de meta 2024
 ```
 
-E a pipeline de modelagem inteira sobre a **amostra anonimizada versionada**:
+E a validação cruzada completa sobre a **amostra versionada**, que exercita split, pré-processamento, treino e avaliação:
 
 ```powershell
 $env:MODELING_DATASET_PATH = "data/processed/sample_modeling_dataset.parquet"
@@ -566,6 +585,7 @@ Semente 42 em todo o fluxo; o pipeline treinado é serializado inteiro; e `repor
 - [x] Validação cruzada agrupada por município
 - [x] Clustering municipal
 - [x] Projeção de risco de não atingimento de meta
+- [x] Verificação de calibração da projeção municipal
 - [x] Amostra anonimizada versionada para reprodução sem credencial
 - [x] Documentação técnica e decisões analíticas
 - [ ] Apresentação e vídeo executivo
@@ -578,7 +598,6 @@ Semente 42 em todo o fluxo; o pipeline treinado é serializado inteiro; e `repor
 - **granularidade socioeconômica municipal**, substituindo o IDHM estadual, que é hoje o gargalo mais claro de poder preditivo;
 - **atributos escolares**, via fonte com chave compatível, para introduzir variação dentro do município e romper o teto de granularidade;
 - **série histórica** a partir de `evolucao_temporal_indicador`, permitindo features de tendência em vez de corte único;
-- **amostra anonimizada versionada** do dataset, para que a pipeline seja reproduzível sem credencial;
 - **clustering com mais grupos**, aceitando silhouette menor em troca de segmentação mais acionável;
 - monitoramento de drift e pipelines automatizados de treino e inferência.
 
@@ -603,6 +622,7 @@ Python, Pandas, NumPy, Scikit-learn, Matplotlib, Jupyter Notebook, Parquet, Amaz
 | [Validação cruzada](reports/cross_validation_results.md) | dispersão entre folds e o que ela explica |
 | [Interpretabilidade por SHAP](reports/shap_results.md) | ranking SHAP contra importância nativa |
 | [Risco de meta 2024](reports/goal_risk_2024.md) | projeção de não atingimento e auditoria |
+| [Calibração da taxa municipal](reports/calibration_municipal.md) | viés, desvio por decil e encolhimento |
 | [Clustering municipal](reports/municipal_clustering_results.md) | perfis territoriais |
 | [Auditoria de granularidade](reports/granularity_audit.md) | por que a AUC fica em 0,66 |
 | [Auditoria da linhagem](reports/target_lineage_audit.md) | prova do leakage de `proficiencia` |

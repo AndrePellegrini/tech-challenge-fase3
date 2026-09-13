@@ -145,10 +145,12 @@ def separation_verdict(summary: pd.DataFrame) -> str:
         )
     return (
         f"A diferença de {difference:.4f} entre `{first['model']}` e "
-        f"`{second['model']}` **não supera** a dispersão combinada entre folds "
-        f"({pooled:.4f}). Os dois são estatisticamente indistinguíveis nesta "
-        f"evidência, e a escolha se justifica pelos critérios de desempate da DEC-012, "
-        f"não pela ROC AUC isolada."
+        f"`{second['model']}` é **pequena diante da dispersão observada entre folds** "
+        f"({pooled:.4f}). Com esta evidência não há separação clara entre os dois, e a "
+        f"escolha se justifica pelos critérios de desempate da DEC-012, não pela ROC "
+        f"AUC isolada.\n\nA comparação é descritiva: não foi aplicado teste pareado "
+        f"por fold, bootstrap da diferença nem intervalo de confiança, de modo que não "
+        f"se afirma equivalência estatística."
     )
 
 
@@ -191,14 +193,18 @@ A média da validação cruzada fica a **{abs(cv_mean - test_auc):.4f}** do test
 um desvio-padrão entre folds. Já o holdout isolado ficou {abs(cv_mean - holdout_auc):.4f}
 abaixo dessa média.
 
-**A conclusão é que a partição de validação era pessimista, não que a de teste fosse
-otimista.** A estimativa de generalização do modelo é mais bem representada pela média
-da validação cruzada, e o resultado do teste está coerente com ela. Isso reforça, e não
+**A proximidade entre a média da validação cruzada e o teste indica que o resultado do
+teste é compatível com a variabilidade territorial observada no desenvolvimento.** A
+média da validação cruzada é a estimativa de generalização mais representativa, e o
+holdout isolado aparenta ter caído numa partição desfavorável. Isso reforça, e não
 enfraquece, a validade da avaliação final.
 
-Registro metodológico: a validação cruzada foi executada sem qualquer acesso ao
-conjunto de teste. A AUC de teste usada aqui vem de `final_test_metrics.json`, artefato
-publicado na ocasião da abertura única, e a comparação é estritamente posterior.
+Registro metodológico, importante para a leitura correta: esta validação cruzada é uma
+**análise pós-hoc de robustez**. Ela foi executada depois da abertura única do teste e
+**não participou da seleção do modelo**, que ocorreu antes, sobre o holdout de
+validação. A validação cruzada não acessa o conjunto de teste em nenhum momento; a AUC
+de teste citada vem de `final_test_metrics.json`, artefato publicado na ocasião da
+abertura, e a comparação é estritamente posterior.
 """
 
 
@@ -229,6 +235,10 @@ def build_report(summary: pd.DataFrame, results: pd.DataFrame, holdout: dict) ->
 
 Fecha a lacuna da DEC-010. O holdout único não permitia dizer se as diferenças de ROC
 AUC entre os finalistas eram reais ou ruído de partição.
+
+Trata-se de **análise pós-hoc de robustez**: foi executada após a seleção do modelo e
+após a abertura do teste, sem acessá-lo. Não reescreve a história da escolha, que se
+deu sobre o holdout.
 
 ## Método
 
