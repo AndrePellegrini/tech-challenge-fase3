@@ -25,6 +25,9 @@ def validate_modeling_dataset(dataset):
     Executa validações estruturais do dataset de modelagem.
     """
 
+    # Caminho legado BigQuery: população de 1.851.852 alunos, diferente das 1.851.828 linhas
+    # do dataset Gold oficial (EXPECTED_ROWS em dataset_contract.py). Os dois números estão
+    # corretos nos seus contextos e não devem ser unificados.
     expected_rows = 1_851_852
     expected_history_rows = 1_816_270
 

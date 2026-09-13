@@ -211,7 +211,10 @@ def main() -> None:
         "removed": ["gap_para_meta_municipio_2024", "atingiu_meta_municipio_2024"],
     }
 
-    tree_candidates = [name for name in ("decision_tree", "random_forest") if name in results]
+    # model_specs() expõe apenas dummy_prior, logistic_regression e decision_tree.
+    tree_candidates = [name for name in ("decision_tree",) if name in results]
+    if not tree_candidates:
+        raise ValueError("Nenhum modelo de árvore disponível para feature importance.")
     importance_model = max(tree_candidates, key=lambda name: results[name]["validation"]["roc_auc"])
     importance = aggregate_tree_importance(pipelines[importance_model], features)
     importance.insert(0, "model", importance_model)

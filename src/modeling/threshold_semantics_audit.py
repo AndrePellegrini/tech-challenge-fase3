@@ -99,13 +99,13 @@ def main() -> None:
         semantic_threshold_metrics(validation["alfabetizado"], prob_alfabetizado, value)
         for value in THRESHOLDS
     ])
-    threshold.to_csv(REPORTS / "threshold_analysis.csv", index=False)
+    threshold.to_csv(REPORTS / "threshold_semantics_analysis.csv", index=False)
 
     balanced_row = threshold.sort_values(["balanced_accuracy", "f1_class_0_risk"], ascending=False).iloc[0]
     high_risk = threshold.loc[threshold["recall_class_0_risk"].ge(.70)]
     risk_row = high_risk.sort_values(["precision_class_0_risk", "balanced_accuracy"], ascending=False).iloc[0]
     municipal = corrected_municipal_analysis(validation, prob_alfabetizado, threshold=None)
-    municipal.to_csv(REPORTS / "final_municipal_validation_analysis.csv", index=False)
+    municipal.to_csv(REPORTS / "threshold_semantics_municipal_analysis.csv", index=False)
 
     IMAGES.mkdir(parents=True, exist_ok=True)
     precision, recall, _ = precision_recall_curve(

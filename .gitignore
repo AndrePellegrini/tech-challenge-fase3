@@ -101,6 +101,7 @@ reports/baseline_results.json
 reports/feature_importance.csv
 reports/municipal_validation_analysis.csv
 reports/final_municipal_validation_analysis.csv
+reports/threshold_semantics_municipal_analysis.csv
 reports/shap_summary.json
 reports/municipal_cluster_assignments.csv
 reports/censo_escolar_feature_inventory.csv

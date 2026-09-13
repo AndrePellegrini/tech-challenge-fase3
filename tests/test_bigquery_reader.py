@@ -7,6 +7,13 @@ from unittest.mock import patch
 
 import pandas as pd
 
+import pytest
+
+# O caminho legado de BigQuery depende de `basedosdados`, pacote pesado que nao e
+# necessario para o fluxo oficial. Sem ele, este modulo e ignorado em vez de quebrar
+# a coleta da suite inteira.
+pytest.importorskip("basedosdados", reason="pacote do caminho legado de BigQuery")
+
 from src.preprocessing import bigquery_reader as reader
 
 

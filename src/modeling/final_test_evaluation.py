@@ -37,6 +37,17 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def label_or_code(label, code) -> str:
+    """Nome do município quando existir; caso contrário o código IBGE.
+
+    `NaN or code` devolveria `NaN`, porque NaN é truthy em Python.
+    """
+    if label is None or (isinstance(label, float) and label != label):
+        return str(code)
+    text = str(label).strip()
+    return text if text and text.lower() != "nan" else str(code)
+
+
 def final_metrics(y, prob_alfabetizado) -> dict:
     """Métricas finais em limiar convencional 0,50, com ambas as classes."""
     y = np.asarray(y); probability = np.asarray(prob_alfabetizado)
@@ -148,7 +159,7 @@ def main() -> None:
     }
     METRICS_PATH.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     top = contexts.head(10)
-    rows = "\n".join(f"| {r.id_municipio_nome or r.id_municipio} | {r.sigla_uf} | {r.rede} | {r.alunos:,} | {r.probabilidade_media_risco:.4f} | {r.historico_2023:.4f} | {r.meta_2024:.4f} | {r.gap:.4f} |" for r in top.itertuples())
+    rows = "\n".join(f"| {label_or_code(r.id_municipio_nome, r.id_municipio)} | {r.sigla_uf} | {r.rede} | {r.alunos:,} | {r.probabilidade_media_risco:.4f} | {r.historico_2023:.4f} | {r.meta_2024:.4f} | {r.gap:.4f} |" for r in top.itertuples())
     report = f"""# Avaliação final única no teste\n\nAbertura registrada em `{result['opened_once_at_utc']}`. Foi aplicado o pipeline Random Forest congelado, treinado somente em TRAIN, sem refit. O threshold 0,50 é referência descritiva; não é decisão operacional.\n\nTeste: {len(test):,} alunos, {len(test_groups)} municípios; classe 0: {result['test']['class_counts']['0']:,} ({result['test']['class_shares']['0']:.2%}); classe 1: {result['test']['class_counts']['1']:,} ({result['test']['class_shares']['1']:.2%}).\n\nAUC teste={test_metrics['roc_auc']:.4f}; validação={validation_metrics['roc_auc']:.4f}; delta={delta:+.4f}, diferença {magnitude}. Em 0,50: accuracy={test_metrics['accuracy_threshold_0_50']:.4f}, balanced accuracy={test_metrics['balanced_accuracy_threshold_0_50']:.4f}; risco precision/recall/F1={test_metrics['precision_class_0_risk']:.4f}/{test_metrics['recall_class_0_risk']:.4f}/{test_metrics['f1_class_0_risk']:.4f}; alfabetizado precision/recall/F1={test_metrics['precision_class_1_literate']:.4f}/{test_metrics['recall_class_1_literate']:.4f}/{test_metrics['f1_class_1_literate']:.4f}. Matriz [linhas verdadeiras, colunas previstas 0/1]: `{test_metrics['confusion_matrix_true_rows_predicted_columns_0_1']}`.\n\nOverlaps de município teste/treino e teste/validação: 0/0. Overlaps de aluno: 0/0. O resultado mede generalização territorial para municípios inéditos.\n\n## Contextos com maior risco relativo\n\n| Município | UF | Rede | Alunos | Prob. risco | Histórico 2023 | Meta | Gap |\n|---|---|---|---:|---:|---:|---:|---:|\n{rows}\n\nRanking associativo para priorização analítica; não prevê oficialmente atingimento de meta e não é diagnóstico individual.\n\n## Limitações\n\nO target é individual, mas as features são contextuais; alunos do mesmo município+rede compartilham X. Cerca de 90% da variação observada estava dentro dos contextos. O enriquecimento escolar falhou pela anonimização de `id_escola`; `proficiencia` foi excluída por leakage direto. As associações não são causais. Feature importance permaneceu a do modelo congelado.\n\n**Nenhum retuning ocorreu após a abertura do teste.**\n"""
     (REPORTS/"final_test_results.md").write_text(report,encoding="utf-8")
     print(json.dumps({"test_metrics":test_metrics,"comparison":result["comparison"],"overlap":overlaps},ensure_ascii=False,indent=2))
