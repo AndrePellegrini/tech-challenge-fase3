@@ -431,3 +431,44 @@ integralmente no conjunto de features e parcialmente na origem da população. A
 mistura está documentada no diagrama de
 [Definição do dataset](modeling_dataset_definition.md). Evolução recomendada para
 uma fase futura: promover a população elegível a uma tabela Gold própria.
+
+---
+
+## DEC-019 — Risco de não atingimento da meta municipal de 2024
+
+**Status:** Concluída e auditada.
+
+**Classificação:** pergunta de negócio exigida pelo Tech Challenge.
+
+**Contexto:** o enunciado pede explicitamente "como prever municípios que podem não
+atingir metas futuras". Até esta etapa a pergunta não tinha resposta, e os relatórios
+declaravam apenas que o ranking de risco *não* previa atingimento de meta.
+
+**Decisão:** projetar a taxa municipal de 2024 pela média das probabilidades de
+alfabetização previstas pelo modelo congelado e compará-la com a meta do município.
+Projeção abaixo da meta gera alerta de risco de não atingimento.
+
+**Auditoria da projeção:** como o conjunto de teste carrega a taxa efetivamente
+observada em 2024, o alerta é confrontado com o desfecho real e comparado a uma linha
+de base ingênua que supõe a repetição da taxa de 2023.
+
+| Estratégia | Acurácia | Precisão | Recall | F1 |
+|---|---:|---:|---:|---:|
+| Projeção do modelo | 0,7026 | 0,6667 | 0,6610 | 0,6638 |
+| Linha de base: repetir 2023 | 0,4780 | 0,4506 | 0,7994 | 0,5764 |
+
+O alerta do modelo acerta 70,3% dos 797 municípios avaliados, contra 47,8% da linha
+de base. A linha de base tem recall alto (0,7994) porque sinaliza quase todo mundo, e
+por isso sua precisão desaba. O ganho do modelo está em separar quem realmente corre
+risco de quem não corre.
+
+**Escopo:** 797 dos 828 municípios do conjunto de teste; 31 foram descartados por não
+terem meta publicada. Todos são municípios inéditos, ausentes do treino e da validação.
+
+**Limitação:** a análise é associativa e não constitui previsão oficial de cumprimento
+de meta. O ranking por gap absoluto concentra-se em UFs com metas mais ambiciosas, o
+que está sinalizado no próprio relatório. Para priorização orçamentária, deve ser
+combinado com o ranking de risco absoluto.
+
+Resultados em [Risco de meta 2024](goal_risk_2024.md), `goal_risk_ranking.csv` e
+`goal_risk_summary.json`.

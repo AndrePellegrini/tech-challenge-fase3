@@ -1,0 +1,33 @@
+{
+  "fonte": "reports/final_test_municipal_analysis.csv",
+  "municipios_no_teste": 828,
+  "municipios_sem_meta": 31,
+  "municipios_avaliados": 797,
+  "municipios_em_risco": 351,
+  "percentual_em_risco": 0.44040150564617314,
+  "municipios_nao_atingiram": 354,
+  "percentual_nao_atingiu": 0.44416562107904645,
+  "gap_previsto_mediano": -0.9830459055673089,
+  "alerta_modelo": {
+    "municipios": 797,
+    "acuracia": 0.7026348808030113,
+    "precision": 0.6666666666666666,
+    "recall": 0.6610169491525424,
+    "f1": 0.6638297872340426,
+    "verdadeiro_positivo": 234,
+    "falso_positivo": 117,
+    "falso_negativo": 120,
+    "verdadeiro_negativo": 326
+  },
+  "alerta_naive_2023": {
+    "municipios": 797,
+    "acuracia": 0.4780426599749059,
+    "precision": 0.45063694267515925,
+    "recall": 0.7994350282485876,
+    "f1": 0.5763747454175153,
+    "verdadeiro_positivo": 283,
+    "falso_positivo": 345,
+    "falso_negativo": 71,
+    "verdadeiro_negativo": 98
+  }
+}
