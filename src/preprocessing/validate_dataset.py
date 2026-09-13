@@ -5,6 +5,7 @@ Schema exato (ordem livre), contagens, unicidade, target e missingness Gold.
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -28,12 +29,23 @@ from src.preprocessing.dataset_contract import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-DATASET_PATH = (
+# Permite apontar todo o fluxo para outro parquet sem editar código. Serve para a
+# amostra anonimizada versionada (data/processed/sample_modeling_dataset.parquet),
+# que deixa a pipeline executável por quem não tem credencial de leitura no S3.
+# Com a amostra, use validate_dataset(strict_counts=False): as contagens do contrato
+# descrevem o dataset completo, não o recorte.
+_OVERRIDE = os.getenv("MODELING_DATASET_PATH")
+
+DATASET_PATH = Path(_OVERRIDE) if _OVERRIDE else (
     PROJECT_ROOT
     / "data"
     / "processed"
     / DATASET_FILENAME
 )
+
+# As contagens do contrato descrevem o dataset completo. Quando o caminho é
+# sobrescrito, o fluxo está sobre um recorte e as contagens não se aplicam.
+USING_FULL_DATASET = _OVERRIDE is None
 
 
 def check_schema(dataset: pd.DataFrame) -> list[str]:

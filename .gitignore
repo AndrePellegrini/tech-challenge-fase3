@@ -93,6 +93,10 @@ data/gold/*
 # Keep directory structure in Git
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+
+# Excecao deliberada: amostra anonimizada que torna a pipeline executavel por
+# quem nao tem credencial de leitura no S3. Cerca de 1 MB.
+!data/processed/sample_modeling_dataset.parquet
 !data/gold/.gitkeep
 
 # Saidas regeneraveis do fluxo antigo de baselines, fora da curadoria final.
