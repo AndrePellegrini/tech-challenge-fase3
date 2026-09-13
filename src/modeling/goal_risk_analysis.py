@@ -18,11 +18,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # backend Agg definido em src.visualization.plots
 import numpy as np
 import pandas as pd
+
+from src.visualization.plots import histogram_with_marker, save_figure
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "reports"
@@ -134,19 +134,15 @@ def plot_risk_versus_gap(frame: pd.DataFrame) -> None:
     plt.ylabel("Taxa de alfabetização projetada para 2024 (%)")
     plt.title("Projeção do modelo contra a meta municipal\nabaixo da diagonal = risco de não atingimento")
     plt.legend(fontsize=8, loc="upper left")
-    plt.tight_layout()
-    plt.savefig(IMAGES / "01_projecao_vs_meta.png", dpi=150)
-    plt.close()
+    save_figure(IMAGES / "01_projecao_vs_meta.png")
 
-    plt.figure(figsize=(8, 5))
-    plt.hist(frame["gap_previsto"], bins=40, color="#4c72b0", alpha=.8)
-    plt.axvline(0, color="#c44e52", linestyle="--", linewidth=1.2)
-    plt.xlabel("Gap projetado em pontos percentuais (meta menos projeção)")
-    plt.ylabel("Municípios")
-    plt.title("Distribuição do gap projetado para a meta de 2024\nà direita de zero = risco de não atingimento")
-    plt.tight_layout()
-    plt.savefig(IMAGES / "02_distribuicao_gap_projetado.png", dpi=150)
-    plt.close()
+    histogram_with_marker(
+        frame["gap_previsto"], IMAGES / "02_distribuicao_gap_projetado.png",
+        title=("Distribuição do gap projetado para a meta de 2024\n"
+               "à direita de zero = risco de não atingimento"),
+        xlabel="Gap projetado em pontos percentuais (meta menos projeção)",
+        ylabel="Municípios", marker=0,
+    )
 
 
 def concentration_note(top: pd.DataFrame, frame: pd.DataFrame) -> str:

@@ -7,20 +7,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import joblib
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (accuracy_score, balanced_accuracy_score, confusion_matrix,
-                             f1_score, precision_recall_curve, precision_score,
-                             recall_score, roc_auc_score, roc_curve)
+                             f1_score, precision_score, recall_score, roc_auc_score)
 
 from src.evaluation.metrics import positive_class_score
 from src.modeling.final_validation import assert_feature_contract
 from src.modeling.split import RANDOM_STATE, get_modeling_columns, split_by_municipality
 from src.modeling.threshold_semantics_audit import risk_probability
 from src.preprocessing.validate_dataset import DATASET_PATH, validate_dataset
+from src.visualization.plots import (overlapping_histograms, precision_recall_curves,
+                                     roc_curves)
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "reports"
@@ -88,23 +86,21 @@ def territorial_analysis(test, prob_alfabetizado, keys):
 
 
 def plot_final(y_test, p_test, y_validation, p_validation):
-    IMAGES.mkdir(parents=True, exist_ok=True)
-    fpr, tpr, _ = roc_curve(y_test, p_test)
-    plt.figure(figsize=(7, 6)); plt.plot(fpr, tpr, label=f"teste AUC={roc_auc_score(y_test,p_test):.4f}")
-    plt.plot([0,1],[0,1],"--",color="gray"); plt.xlabel("FPR"); plt.ylabel("TPR"); plt.legend()
-    plt.title("ROC final — teste"); plt.tight_layout(); plt.savefig(IMAGES/"roc_final_test.png",dpi=150); plt.close()
+    roc_curves({"teste": (y_test, p_test)}, IMAGES / "roc_final_test.png",
+               title="ROC final — teste")
     for suffix, event, score, label in (
         ("literate", y_test, p_test, "alfabetização (classe 1)"),
-        ("risk", (np.asarray(y_test)==0).astype(int), 1-np.asarray(p_test), "risco (classe 0)"),
+        ("risk", (np.asarray(y_test) == 0).astype(int), 1 - np.asarray(p_test), "risco (classe 0)"),
     ):
-        precision, recall, _ = precision_recall_curve(event, score)
-        plt.figure(figsize=(7,6)); plt.plot(recall,precision); plt.xlabel("Recall"); plt.ylabel("Precision")
-        plt.title(f"Precision–Recall — {label} — teste"); plt.tight_layout()
-        plt.savefig(IMAGES/f"precision_recall_{suffix}_test.png",dpi=150); plt.close()
-    plt.figure(figsize=(8,5)); plt.hist(1-np.asarray(p_validation),bins=40,alpha=.55,density=True,label="validação")
-    plt.hist(1-np.asarray(p_test),bins=40,alpha=.55,density=True,label="teste")
-    plt.xlabel("Probabilidade de risco"); plt.ylabel("Densidade"); plt.legend(); plt.title("Risco: validação vs teste")
-    plt.tight_layout(); plt.savefig(IMAGES/"risk_distribution_validation_vs_test.png",dpi=150); plt.close()
+        precision_recall_curves(
+            {label: (event, score)}, IMAGES / f"precision_recall_{suffix}_test.png",
+            title=f"Precision–Recall — {label} — teste",
+        )
+    overlapping_histograms(
+        {"validação": 1 - np.asarray(p_validation), "teste": 1 - np.asarray(p_test)},
+        IMAGES / "risk_distribution_validation_vs_test.png",
+        title="Risco: validação vs teste", xlabel="Probabilidade de risco",
+    )
 
 
 def main() -> None:

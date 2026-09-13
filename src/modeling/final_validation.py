@@ -7,9 +7,6 @@ import platform
 import time
 
 import joblib
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sklearn
@@ -18,8 +15,7 @@ from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
-                             precision_recall_curve, precision_score, recall_score,
-                             roc_auc_score, roc_curve)
+                             precision_score, recall_score, roc_auc_score)
 from sklearn.pipeline import Pipeline
 from sklearn.tree import DecisionTreeClassifier
 
@@ -27,6 +23,7 @@ from src.evaluation.metrics import positive_class_score
 from src.modeling.split import RANDOM_STATE, get_modeling_columns, split_by_municipality
 from src.modeling.train_baselines import aggregate_tree_importance, build_pipeline
 from src.preprocessing.validate_dataset import DATASET_PATH, validate_dataset
+from src.visualization.plots import precision_recall_curves, roc_curves
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "reports"
@@ -120,22 +117,15 @@ def fit_candidate(spec, features, X_train, y_train, X_validation, y_validation,
 
 
 def plot_curves(pipelines, X_validation, y_validation) -> None:
-    IMAGES.mkdir(parents=True, exist_ok=True)
-    plt.figure(figsize=(7, 6))
-    for name, pipe in pipelines.items():
-        score = positive_class_score(pipe, X_validation)
-        fpr, tpr, _ = roc_curve(y_validation, score)
-        plt.plot(fpr, tpr, label=f"{name} ({roc_auc_score(y_validation, score):.4f})")
-    plt.plot([0, 1], [0, 1], "--", color="gray"); plt.xlabel("FPR"); plt.ylabel("TPR")
-    plt.title("ROC — somente validação"); plt.legend(fontsize=8); plt.tight_layout()
-    plt.savefig(IMAGES / "roc_validation.png", dpi=150); plt.close()
-    plt.figure(figsize=(7, 6))
-    for name, pipe in pipelines.items():
-        score = positive_class_score(pipe, X_validation)
-        precision, recall, _ = precision_recall_curve(y_validation, score)
-        plt.plot(recall, precision, label=name)
-    plt.xlabel("Recall"); plt.ylabel("Precision"); plt.title("Precision–Recall — somente validação")
-    plt.legend(fontsize=8); plt.tight_layout(); plt.savefig(IMAGES / "precision_recall_validation.png", dpi=150); plt.close()
+    curves = {
+        name: (y_validation, positive_class_score(pipe, X_validation))
+        for name, pipe in pipelines.items()
+    }
+    roc_curves(curves, IMAGES / "roc_validation.png", title="ROC — somente validação")
+    precision_recall_curves(
+        curves, IMAGES / "precision_recall_validation.png",
+        title="Precision–Recall — somente validação",
+    )
 
 
 def municipal_analysis(data, score, threshold):
