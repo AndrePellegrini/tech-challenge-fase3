@@ -17,7 +17,18 @@
   precisa ser avaliado pelo grupo.
 - A análise municipal deriva previsões individuais de validação e não representa
   estimativa oficial de cumprimento de metas.
-- A seleção do melhor baseline é provisória. Teste, tuning, calibração e escolha
-  de limiar continuam reservados para etapas posteriores.
-- Random Forest e SHAP não foram concluídos por custo local. Reavaliar ambos é
-  uma decisão complementar, não condição para validar estes baselines.
+- Não foi executada validação cruzada agrupada. Com holdout único não há
+  estimativa de variância entre folds, e diferenças de ROC AUC na casa de 0,002
+  entre candidatos próximos não são estatisticamente distinguíveis.
+- A otimização de hiperparâmetros usou grade manual pequena e definida a priori,
+  sem busca automatizada; não há garantia de que o ótimo esteja contido nela.
+- A diferença de ROC AUC entre teste (0,6631) e validação (0,6409) é de +0,0222,
+  classificada como moderada pelo próprio protocolo. O teste ficou acima da
+  validação, o que afasta overfitting de seleção, mas indica que a partição de
+  teste é marginalmente mais favorável — a estimativa de generalização deve ser
+  lida com essa ressalva.
+- SHAP não foi executado. Depende do modelo serializado e do parquet de
+  modelagem, nenhum dos dois versionado. Permanece como pendência explícita.
+- A reprodução completa da pipeline exige credenciais de leitura no bucket S3
+  privado da equipe. Sem elas, um avaliador externo consegue executar a suíte de
+  testes, mas não regenerar o dataset de modelagem.

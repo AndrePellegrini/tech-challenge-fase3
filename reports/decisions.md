@@ -177,68 +177,141 @@ atribuída como prescrição específica da FIAP.
 
 ## DEC-009 — Algoritmos candidatos
 
-**Status:** Baselines executados.
+**Status:** Concluída. Onze candidatos comparados em validação.
 
 **Classificação:** decisão metodológica do grupo.
 
-Dummy, regressão logística e árvore de decisão formam a comparação progressiva.
-Random Forest foi tentado e interrompido por custo local desproporcional. Não foi
-adicionada dependência de boosting.
+A comparação progressiva partiu de Dummy, regressão logística e árvore de decisão.
+Uma primeira tentativa de Random Forest foi interrompida por custo local, mas a
+configuração foi posteriormente limitada (40 árvores, profundidade 10, folha mínima
+200, `max_features="sqrt"`, dois jobs) e executada com sucesso.
+
+O conjunto final avaliado em validação tem onze candidatos: `dummy_prior`, três
+regressões logísticas (C = 1,0 / 0,3 / 0,1), seis árvores de decisão e a Random
+Forest controlada. Não foi adicionada dependência de boosting. Resultados completos
+em [Validação final](final_validation_results.md) e `final_model_comparison.csv`.
 
 ---
 
 ## DEC-010 — Estratégia de validação cruzada
 
-**Status:** Pendente
+**Status:** Decidida: não executar. Limitação assumida e declarada.
 
-A definir considerando estrutura e distribuição dos dados.
+**Classificação:** decisão metodológica do grupo.
+
+A validação cruzada agrupada por município não foi executada. O custo de refazer
+onze ajustes sobre 1,85 milhão de linhas foi julgado desproporcional diante de um
+holdout municipal já estanque, com zero sobreposição de município e de aluno entre
+as três partições.
+
+**Limitação reconhecida:** com holdout único não há estimativa de variância entre
+folds. As diferenças de ROC AUC entre os candidatos mais próximos ficam na casa de
+0,002 a 0,010, faixa em que o holdout isolado não permite afirmar significância.
+Por isso a regra de seleção (DEC-012) não usa AUC como critério único, e sim uma
+ordem de desempate que privilegia estabilidade.
+
+Uma `GroupKFold` sobre amostra estratificada de municípios é a evolução natural e
+está registrada como trabalho futuro.
 
 ---
 
 ## DEC-011 — Estratégia de otimização de hiperparâmetros
 
-**Status:** Pendente
+**Status:** Concluída por grade manual controlada.
 
-A definir após avaliação inicial dos modelos candidatos.
+**Classificação:** decisão metodológica do grupo.
+
+A otimização foi feita por grade manual explícita, declarada em código, e não por
+`GridSearchCV` ou `RandomizedSearchCV`. Variaram-se a regularização da regressão
+logística (C = 1,0 / 0,3 / 0,1) e a capacidade das árvores (profundidade 5, 7, 10,
+14 e 15; folha mínima 100 e 500), além da Random Forest com capacidade limitada.
+
+**Justificativa:** a busca automatizada multiplicaria o número de ajustes sobre
+1,85 milhão de linhas sem validação cruzada que sustentasse a comparação. A grade
+manual mantém cada configuração rastreável e reprodutível.
+
+**Limitação reconhecida:** a grade é pequena e definida a priori; não há garantia
+de que o ótimo esteja dentro dela.
 
 ---
 
 ## DEC-012 — Seleção do modelo final
 
-**Status:** Melhor baseline provisório definido; modelo final pendente.
+**Status:** Concluída. Modelo final selecionado, congelado e avaliado uma única vez.
 
-**Classificação:** decisão metodológica do grupo — REVISAR COM O GRUPO.
+**Classificação:** decisão metodológica do grupo.
 
-A árvore de decisão obteve a maior ROC AUC de validação (0,6214), mas mostrou
-gap de 0,0603 em relação ao treino. Ela serve à análise inicial e não é declarada
-modelo final antes de tuning controlado e avaliação única do teste.
+**Modelo final:** `random_forest_controlled` — `RandomForestClassifier` com 40
+estimadores, profundidade máxima 10, folha mínima 200, `max_features="sqrt"` e
+`random_state=42`.
+
+**Regra de seleção:** entre os candidatos a até 0,002 da melhor ROC AUC de
+validação, prefere-se o de menor gap treino/validação; depois maior F1; depois
+menor tempo de treino. A regra evita escolher por diferenças de AUC dentro do
+ruído, coerente com a ausência de validação cruzada (DEC-010).
+
+**Resultado em validação:** ROC AUC 0,6409, gap treino/validação 0,0343. Os
+concorrentes mais próximos foram `decision_tree_d5_l100` (0,6307, gap 0,0310) e
+`decision_tree_d10_l100` (0,6302, gap 0,0449).
+
+**Resultado no teste:** ROC AUC 0,6631 em 828 municípios inéditos e 243.746
+alunos, sem qualquer sobreposição territorial ou individual. A diferença em
+relação à validação é de +0,0222, classificada como moderada pelo próprio
+protocolo. O teste ficou **acima** da validação, o que afasta overfitting de
+seleção e sugere partição de teste marginalmente mais favorável.
+
+**Protocolo de abertura única:** o modelo foi congelado antes do teste, o
+conjunto foi aberto uma só vez, não houve refit nem retuning posterior. O
+bloqueio é garantido em código e coberto por testes automatizados.
+
+Detalhes em [Protocolo congelado](final_model_protocol.md) e
+[Avaliação final](final_test_results.md).
 
 ---
 
 ## DEC-013 — Estratégia de interpretabilidade
 
-**Status:** Feature Importance inicial concluída; SHAP adiado.
+**Status:** Feature Importance do modelo final concluída; SHAP permanece pendente.
 
 **Classificação:** curricular complementar/recomendado e decisão de execução do grupo.
 
-Foi usada importância nativa da árvore, agregada às features de origem. SHAP não
-foi executado por custo e dependência adicional. Nenhuma importância recebe
-interpretação causal.
+Foi usada a importância nativa da Random Forest final, reagregada das 43 colunas
+codificadas para as 16 features de origem, de modo que as categorias one-hot de
+`rede` e `sigla_uf` não apareçam fragmentadas. Resultado em
+`final_feature_importance.csv`.
+
+SHAP não foi executado. A execução depende do modelo serializado, que não é
+versionado, e do parquet de modelagem, que também não é. Com o ambiente montado o
+custo é baixo para uma floresta de 40 árvores e profundidade 10. Permanece como
+pendência explícita, e não como decisão de descarte.
+
+Nenhuma importância recebe interpretação causal.
 
 ---
 
 ## DEC-014 — Análises complementares
 
-**Status:** Pendente
+**Status:** Parcialmente concluída. Agrupamento executado; análise temporal descartada.
 
-Será avaliada a viabilidade e utilidade de análises complementares, como:
+**Classificação:** decisão metodológica do grupo.
 
-* agrupamento de municípios ou regiões;
-* identificação de perfis semelhantes;
-* análise temporal;
-* avaliação de risco de não atingimento de metas futuras.
+* **Agrupamento de municípios — executado.** K-means sobre 5.517 municípios, com
+  `Pipeline` de imputação por mediana, padronização e clusterização. Escolhido
+  k = 2, silhouette 0,3591, estabilidade ARI entre 0,9971 e 1,0 em cinco sementes.
+  PCA usada apenas para visualização, explicando 82,2% da variância. Resultados em
+  [Clustering municipal](municipal_clustering_results.md).
+* **Identificação de perfis semelhantes — executada** como subproduto do
+  agrupamento e da auditoria de granularidade.
+* **Análise temporal — descartada nesta fase.** A tabela Gold
+  `evolucao_temporal_indicador` existe, mas o dataset de modelagem usa um único ano
+  de corte (2023) para as features de contexto. Construir série histórica exigiria
+  redesenhar o contrato do dataset, o que está fora do escopo desta entrega.
+* **Risco de não atingimento de metas futuras — ver DEC-019.**
 
-A utilização dessas técnicas dependerá da estrutura e qualidade dos dados disponíveis.
+**Limitação do agrupamento:** com k = 2 a separação é essencialmente Sul/Sudeste
+contra Norte/Nordeste. É interpretável, mas de granularidade baixa para priorização
+fina de política pública. A regra de seleção privilegiou a métrica de silhouette;
+k = 4 daria segmentação mais acionável ao custo de cerca de 0,08 de silhouette.
 
 ## DEC-015 — Estratégia de acesso e materialização dos dados
 
@@ -318,3 +391,43 @@ adicionar granularidade escolar pré-target. Integração, cobertura e seleção
 atributos permanecem **REVISAR COM O GRUPO**. Evidências em
 [Linhagem do target](target_lineage_audit.md) e
 [Matriz de candidatas](feature_candidate_audit.md).
+
+---
+
+## DEC-018 — Origem do target na camada Silver
+
+**Status:** Formalizada.
+
+**Classificação:** desvio consciente em relação ao enunciado, com justificativa técnica.
+
+**Contexto:** o enunciado da Fase 3 determina que os dados de modelagem venham da
+camada Gold construída na Fase 2, e ao mesmo tempo exige um modelo que preveja
+**se um aluno** será alfabetizado.
+
+**Problema:** as duas exigências são incompatíveis com a Gold existente. O catálogo
+Gold da Fase 2 tem quatro tabelas — `indicador_alfabetizacao_municipio`,
+`comparativo_metas_resultados`, `evolucao_temporal_indicador` e
+`desempenho_alunos_municipio` — e **todas são agregadas** por município, UF ou
+Brasil. Não existe tabela Gold em granularidade de aluno, logo o target individual
+não pode ser obtido apenas da Gold.
+
+**Decisão:** adotar origem híbrida e declará-la explicitamente.
+
+* **População e target** vêm da Silver `alunos`, partição `processing_date=2026-07-09`.
+  Isso inclui `id_aluno`, `id_municipio`, `id_escola`, `rede`, `peso_aluno`, os
+  filtros de elegibilidade e a própria coluna `alfabetizado`.
+* **Todas as features de contexto** vêm da camada Gold: histórico municipal de 2023,
+  desempenho agregado, metas municipais para 2024 e os indicadores IDHM em nível de UF.
+
+**Justificativa:** preservar a granularidade individual exigida pelo enunciado sem
+inventar uma tabela Gold que a Fase 2 não produziu. A alternativa seria modelar em
+granularidade municipal, o que contrariaria a definição do problema.
+
+**Alternativa não adotada:** criar retroativamente uma Gold `alunos_modelagem` na
+Fase 2. Descartada por exigir alteração no escopo de uma fase já entregue.
+
+**Impacto:** o requisito de dados provenientes da camada Gold é atendido
+integralmente no conjunto de features e parcialmente na origem da população. A
+mistura está documentada no diagrama de
+[Definição do dataset](modeling_dataset_definition.md). Evolução recomendada para
+uma fase futura: promover a população elegível a uma tabela Gold própria.
