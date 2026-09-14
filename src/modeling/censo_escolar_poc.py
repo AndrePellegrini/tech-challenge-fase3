@@ -20,9 +20,9 @@ from src.modeling.granularity_audit import (
 from src.preprocessing.validate_dataset import DATASET_PATH, validate_dataset
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_ZIP = Path(
-    r"C:\Users\pedro\Documents\ChatGPT\PÓS FIAP - Implemantação\tmp\censo_poc\microdados_censo_escolar_2023.zip"
-)
+# O ZIP dos microdados não é versionado (ver .gitignore). O caminho padrão é relativo ao
+# repositório; use a variável CENSO_ESCOLAR_2023_ZIP para apontar outro local.
+DEFAULT_ZIP = ROOT / "data" / "raw" / "microdados_censo_escolar_2023.zip"
 REPORT_PATH = ROOT / "reports" / "censo_escolar_feasibility.md"
 INVENTORY_PATH = ROOT / "reports" / "censo_escolar_feature_inventory.csv"
 JOIN_PATH = ROOT / "reports" / "censo_escolar_join_audit.json"

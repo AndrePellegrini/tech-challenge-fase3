@@ -7,20 +7,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import joblib
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.metrics import (accuracy_score, balanced_accuracy_score, confusion_matrix,
-                             f1_score, precision_recall_curve, precision_score,
-                             recall_score, roc_auc_score, roc_curve)
+                             f1_score, precision_score, recall_score, roc_auc_score)
 
 from src.evaluation.metrics import positive_class_score
 from src.modeling.final_validation import assert_feature_contract
 from src.modeling.split import RANDOM_STATE, get_modeling_columns, split_by_municipality
 from src.modeling.threshold_semantics_audit import risk_probability
 from src.preprocessing.validate_dataset import DATASET_PATH, validate_dataset
+from src.visualization.plots import (overlapping_histograms, precision_recall_curves,
+                                     roc_curves)
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "reports"
@@ -35,6 +33,17 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def label_or_code(label, code) -> str:
+    """Nome do município quando existir; caso contrário o código IBGE.
+
+    `NaN or code` devolveria `NaN`, porque NaN é truthy em Python.
+    """
+    if label is None or (isinstance(label, float) and label != label):
+        return str(code)
+    text = str(label).strip()
+    return text if text and text.lower() != "nan" else str(code)
 
 
 def final_metrics(y, prob_alfabetizado) -> dict:
@@ -77,23 +86,21 @@ def territorial_analysis(test, prob_alfabetizado, keys):
 
 
 def plot_final(y_test, p_test, y_validation, p_validation):
-    IMAGES.mkdir(parents=True, exist_ok=True)
-    fpr, tpr, _ = roc_curve(y_test, p_test)
-    plt.figure(figsize=(7, 6)); plt.plot(fpr, tpr, label=f"teste AUC={roc_auc_score(y_test,p_test):.4f}")
-    plt.plot([0,1],[0,1],"--",color="gray"); plt.xlabel("FPR"); plt.ylabel("TPR"); plt.legend()
-    plt.title("ROC final — teste"); plt.tight_layout(); plt.savefig(IMAGES/"roc_final_test.png",dpi=150); plt.close()
+    roc_curves({"teste": (y_test, p_test)}, IMAGES / "roc_final_test.png",
+               title="ROC final — teste")
     for suffix, event, score, label in (
         ("literate", y_test, p_test, "alfabetização (classe 1)"),
-        ("risk", (np.asarray(y_test)==0).astype(int), 1-np.asarray(p_test), "risco (classe 0)"),
+        ("risk", (np.asarray(y_test) == 0).astype(int), 1 - np.asarray(p_test), "risco (classe 0)"),
     ):
-        precision, recall, _ = precision_recall_curve(event, score)
-        plt.figure(figsize=(7,6)); plt.plot(recall,precision); plt.xlabel("Recall"); plt.ylabel("Precision")
-        plt.title(f"Precision–Recall — {label} — teste"); plt.tight_layout()
-        plt.savefig(IMAGES/f"precision_recall_{suffix}_test.png",dpi=150); plt.close()
-    plt.figure(figsize=(8,5)); plt.hist(1-np.asarray(p_validation),bins=40,alpha=.55,density=True,label="validação")
-    plt.hist(1-np.asarray(p_test),bins=40,alpha=.55,density=True,label="teste")
-    plt.xlabel("Probabilidade de risco"); plt.ylabel("Densidade"); plt.legend(); plt.title("Risco: validação vs teste")
-    plt.tight_layout(); plt.savefig(IMAGES/"risk_distribution_validation_vs_test.png",dpi=150); plt.close()
+        precision_recall_curves(
+            {label: (event, score)}, IMAGES / f"precision_recall_{suffix}_test.png",
+            title=f"Precision–Recall — {label} — teste",
+        )
+    overlapping_histograms(
+        {"validação": 1 - np.asarray(p_validation), "teste": 1 - np.asarray(p_test)},
+        IMAGES / "risk_distribution_validation_vs_test.png",
+        title="Risco: validação vs teste", xlabel="Probabilidade de risco",
+    )
 
 
 def main() -> None:
@@ -148,7 +155,7 @@ def main() -> None:
     }
     METRICS_PATH.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     top = contexts.head(10)
-    rows = "\n".join(f"| {r.id_municipio_nome or r.id_municipio} | {r.sigla_uf} | {r.rede} | {r.alunos:,} | {r.probabilidade_media_risco:.4f} | {r.historico_2023:.4f} | {r.meta_2024:.4f} | {r.gap:.4f} |" for r in top.itertuples())
+    rows = "\n".join(f"| {label_or_code(r.id_municipio_nome, r.id_municipio)} | {r.sigla_uf} | {r.rede} | {r.alunos:,} | {r.probabilidade_media_risco:.4f} | {r.historico_2023:.4f} | {r.meta_2024:.4f} | {r.gap:.4f} |" for r in top.itertuples())
     report = f"""# Avaliação final única no teste\n\nAbertura registrada em `{result['opened_once_at_utc']}`. Foi aplicado o pipeline Random Forest congelado, treinado somente em TRAIN, sem refit. O threshold 0,50 é referência descritiva; não é decisão operacional.\n\nTeste: {len(test):,} alunos, {len(test_groups)} municípios; classe 0: {result['test']['class_counts']['0']:,} ({result['test']['class_shares']['0']:.2%}); classe 1: {result['test']['class_counts']['1']:,} ({result['test']['class_shares']['1']:.2%}).\n\nAUC teste={test_metrics['roc_auc']:.4f}; validação={validation_metrics['roc_auc']:.4f}; delta={delta:+.4f}, diferença {magnitude}. Em 0,50: accuracy={test_metrics['accuracy_threshold_0_50']:.4f}, balanced accuracy={test_metrics['balanced_accuracy_threshold_0_50']:.4f}; risco precision/recall/F1={test_metrics['precision_class_0_risk']:.4f}/{test_metrics['recall_class_0_risk']:.4f}/{test_metrics['f1_class_0_risk']:.4f}; alfabetizado precision/recall/F1={test_metrics['precision_class_1_literate']:.4f}/{test_metrics['recall_class_1_literate']:.4f}/{test_metrics['f1_class_1_literate']:.4f}. Matriz [linhas verdadeiras, colunas previstas 0/1]: `{test_metrics['confusion_matrix_true_rows_predicted_columns_0_1']}`.\n\nOverlaps de município teste/treino e teste/validação: 0/0. Overlaps de aluno: 0/0. O resultado mede generalização territorial para municípios inéditos.\n\n## Contextos com maior risco relativo\n\n| Município | UF | Rede | Alunos | Prob. risco | Histórico 2023 | Meta | Gap |\n|---|---|---|---:|---:|---:|---:|---:|\n{rows}\n\nRanking associativo para priorização analítica; não prevê oficialmente atingimento de meta e não é diagnóstico individual.\n\n## Limitações\n\nO target é individual, mas as features são contextuais; alunos do mesmo município+rede compartilham X. Cerca de 90% da variação observada estava dentro dos contextos. O enriquecimento escolar falhou pela anonimização de `id_escola`; `proficiencia` foi excluída por leakage direto. As associações não são causais. Feature importance permaneceu a do modelo congelado.\n\n**Nenhum retuning ocorreu após a abertura do teste.**\n"""
     (REPORTS/"final_test_results.md").write_text(report,encoding="utf-8")
     print(json.dumps({"test_metrics":test_metrics,"comparison":result["comparison"],"overlap":overlaps},ensure_ascii=False,indent=2))

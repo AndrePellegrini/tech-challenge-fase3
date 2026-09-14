@@ -11,9 +11,6 @@ import time
 import warnings
 
 import joblib
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn.dummy import DummyClassifier
@@ -26,6 +23,7 @@ from src.evaluation.metrics import classification_metrics, positive_class_score
 from src.modeling.split import RANDOM_STATE, get_modeling_columns, split_by_municipality, validate_split
 from src.preprocessing.model_preprocessor import build_model_preprocessor
 from src.preprocessing.validate_dataset import DATASET_PATH, validate_dataset
+from src.visualization.plots import grouped_bar, horizontal_bar
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORT_PATH = ROOT / "reports" / "baseline_results.json"
@@ -128,23 +126,18 @@ def municipal_analysis(dataset: pd.DataFrame, positions: np.ndarray, pipeline: P
 
 
 def _plot_results(comparison: pd.DataFrame, importance: pd.DataFrame) -> None:
-    IMAGE_DIR.mkdir(parents=True, exist_ok=True)
-    comparison.set_index("model")[["f1", "recall", "roc_auc"]].plot.bar(
-        figsize=(9, 5), ylim=(0, 1), rot=20, title="Baselines — validação municipal",
+    grouped_bar(
+        comparison.set_index("model"), ["f1", "recall", "roc_auc"],
+        IMAGE_DIR / "06_baseline_comparison.png",
+        title="Baselines — validação municipal", ylabel="Métrica",
     )
-    plt.ylabel("Métrica")
-    plt.tight_layout()
-    plt.savefig(IMAGE_DIR / "06_baseline_comparison.png", dpi=150, bbox_inches="tight")
-    plt.close()
     if len(importance):
         top = importance.head(15).sort_values("importance")
-        plt.figure(figsize=(8, 6))
-        plt.barh(top["feature"], top["importance"], color="#4c72b0")
-        plt.title("Importância nativa agregada — melhor baseline de árvore")
-        plt.xlabel("Importância (associativa, não causal)")
-        plt.tight_layout()
-        plt.savefig(IMAGE_DIR / "07_feature_importance.png", dpi=150, bbox_inches="tight")
-        plt.close()
+        horizontal_bar(
+            top["feature"], top["importance"], IMAGE_DIR / "07_feature_importance.png",
+            title="Importância nativa agregada — melhor baseline de árvore",
+            xlabel="Importância (associativa, não causal)",
+        )
 
 
 def main() -> None:
@@ -211,7 +204,10 @@ def main() -> None:
         "removed": ["gap_para_meta_municipio_2024", "atingiu_meta_municipio_2024"],
     }
 
-    tree_candidates = [name for name in ("decision_tree", "random_forest") if name in results]
+    # model_specs() expõe apenas dummy_prior, logistic_regression e decision_tree.
+    tree_candidates = [name for name in ("decision_tree",) if name in results]
+    if not tree_candidates:
+        raise ValueError("Nenhum modelo de árvore disponível para feature importance.")
     importance_model = max(tree_candidates, key=lambda name: results[name]["validation"]["roc_auc"])
     importance = aggregate_tree_importance(pipelines[importance_model], features)
     importance.insert(0, "model", importance_model)

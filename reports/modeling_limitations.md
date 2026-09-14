@@ -17,7 +17,22 @@
   precisa ser avaliado pelo grupo.
 - A análise municipal deriva previsões individuais de validação e não representa
   estimativa oficial de cumprimento de metas.
-- A seleção do melhor baseline é provisória. Teste, tuning, calibração e escolha
-  de limiar continuam reservados para etapas posteriores.
-- Random Forest e SHAP não foram concluídos por custo local. Reavaliar ambos é
-  uma decisão complementar, não condição para validar estes baselines.
+- A validação cruzada agrupada foi executada nos quatro finalistas, não nos onze
+  candidatos, por custo computacional. Ela é uma análise pós-hoc de robustez: veio
+  depois da seleção e da abertura do teste, sem acessá-lo.
+- A diferença entre Random Forest e regressão logística é pequena diante da
+  dispersão entre folds, de modo que não há separação clara entre os dois. A
+  comparação é descritiva, sem teste pareado ou bootstrap, e a escolha do modelo
+  final se apoia nos critérios de desempate e não na ROC AUC.
+- A otimização de hiperparâmetros usou grade manual pequena e definida a priori,
+  sem busca automatizada; não há garantia de que o ótimo esteja contido nela.
+- A diferença de ROC AUC entre teste (0,6631) e validação (0,6409) é de +0,0222.
+  A média da validação cruzada é 0,6608, a 0,0023 do teste, o que indica resultado
+  compatível com a variabilidade territorial observada no desenvolvimento. A melhor
+  estimativa de generalização é a média da validação cruzada.
+- A interpretabilidade por SHAP usa amostra de 8.000 linhas da validação, não a
+  partição inteira. O ranking é associativo e descreve como o modelo usa as
+  features, não como a alfabetização é produzida.
+- A reprodução do dataset completo exige credenciais de leitura no bucket S3 privado
+  da equipe. Sem elas, é possível executar a suíte de testes e toda a pipeline sobre
+  a amostra anonimizada versionada, mas não regenerar as 1.851.828 linhas.

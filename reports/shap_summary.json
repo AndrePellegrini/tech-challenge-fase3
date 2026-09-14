@@ -1,0 +1,42 @@
+{
+  "executed": true,
+  "explainer": "shap.TreeExplainer",
+  "model": "random_forest_controlled",
+  "model_path": "models/final_candidate_validation.joblib",
+  "partition": "validation",
+  "test_accessed": false,
+  "sample_rows": 8000,
+  "encoded_features": 43,
+  "source_features": 16,
+  "random_state": 42,
+  "spearman_ranks": 0.8558823529411764,
+  "top_features": [
+    {
+      "feature": "media_portugues_municipio_2023",
+      "mean_abs_shap": 0.021469632661829798
+    },
+    {
+      "feature": "sigla_uf",
+      "mean_abs_shap": 0.017062693517481596
+    },
+    {
+      "feature": "idhm_educacao",
+      "mean_abs_shap": 0.016568712761684562
+    },
+    {
+      "feature": "meta_alfabetizacao_municipio_2024",
+      "mean_abs_shap": 0.012212581361169624
+    },
+    {
+      "feature": "taxa_alfabetizacao_municipio_2023",
+      "mean_abs_shap": 0.01196933651313711
+    }
+  ],
+  "versions": {
+    "python": "3.12.10",
+    "pandas": "2.3.3",
+    "numpy": "2.5.3",
+    "scikit_learn": "1.9.0",
+    "shap": "0.52.0"
+  }
+}

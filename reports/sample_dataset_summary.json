@@ -1,0 +1,38 @@
+{
+  "proposito": "amostra para verificar a execução da pipeline; os resultados oficiais do projeto vêm do dataset completo, não versionado",
+  "origem": "modeling_dataset_2024_gold.parquet",
+  "arquivo": "data/processed/sample_modeling_dataset.parquet",
+  "bytes": 436904,
+  "estrategia": "amostragem de municípios estratificada por UF, com estrato próprio para os municípios sem histórico Gold",
+  "random_state": 42,
+  "colunas_substituidas": [
+    "id_aluno",
+    "id_escola"
+  ],
+  "substituicao": "surrogate sequencial atribuido na ordem de aparicao; nao deriva do identificador de origem e nao permite reverte-lo",
+  "identificadores_em_X": false,
+  "universo": {
+    "linhas": 1851828,
+    "municipios": 5517,
+    "ufs": 24,
+    "taxa_alfabetizacao": 0.5978433202219645,
+    "share_municipal": 0.8698183632605188,
+    "cobertura_gold": 0.980798432683813,
+    "idhm_medio": 0.7950559322127219
+  },
+  "amostra": {
+    "linhas": 53854,
+    "municipios": 161,
+    "ufs": 24,
+    "taxa_alfabetizacao": 0.6294797043859324,
+    "share_municipal": 0.8391762914546738,
+    "cobertura_gold": 0.9964533739369407,
+    "idhm_medio": 0.8004436390063916
+  },
+  "diferencas": {
+    "taxa_alfabetizacao": 0.031636,
+    "share_municipal": -0.030642,
+    "cobertura_gold": 0.015655,
+    "idhm_medio": 0.005388
+  }
+}

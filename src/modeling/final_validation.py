@@ -7,9 +7,6 @@ import platform
 import time
 
 import joblib
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sklearn
@@ -18,8 +15,7 @@ from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
-                             precision_recall_curve, precision_score, recall_score,
-                             roc_auc_score, roc_curve)
+                             precision_score, recall_score, roc_auc_score)
 from sklearn.pipeline import Pipeline
 from sklearn.tree import DecisionTreeClassifier
 
@@ -27,6 +23,7 @@ from src.evaluation.metrics import positive_class_score
 from src.modeling.split import RANDOM_STATE, get_modeling_columns, split_by_municipality
 from src.modeling.train_baselines import aggregate_tree_importance, build_pipeline
 from src.preprocessing.validate_dataset import DATASET_PATH, validate_dataset
+from src.visualization.plots import precision_recall_curves, roc_curves
 
 ROOT = Path(__file__).resolve().parents[2]
 REPORTS = ROOT / "reports"
@@ -120,22 +117,15 @@ def fit_candidate(spec, features, X_train, y_train, X_validation, y_validation,
 
 
 def plot_curves(pipelines, X_validation, y_validation) -> None:
-    IMAGES.mkdir(parents=True, exist_ok=True)
-    plt.figure(figsize=(7, 6))
-    for name, pipe in pipelines.items():
-        score = positive_class_score(pipe, X_validation)
-        fpr, tpr, _ = roc_curve(y_validation, score)
-        plt.plot(fpr, tpr, label=f"{name} ({roc_auc_score(y_validation, score):.4f})")
-    plt.plot([0, 1], [0, 1], "--", color="gray"); plt.xlabel("FPR"); plt.ylabel("TPR")
-    plt.title("ROC — somente validação"); plt.legend(fontsize=8); plt.tight_layout()
-    plt.savefig(IMAGES / "roc_validation.png", dpi=150); plt.close()
-    plt.figure(figsize=(7, 6))
-    for name, pipe in pipelines.items():
-        score = positive_class_score(pipe, X_validation)
-        precision, recall, _ = precision_recall_curve(y_validation, score)
-        plt.plot(recall, precision, label=name)
-    plt.xlabel("Recall"); plt.ylabel("Precision"); plt.title("Precision–Recall — somente validação")
-    plt.legend(fontsize=8); plt.tight_layout(); plt.savefig(IMAGES / "precision_recall_validation.png", dpi=150); plt.close()
+    curves = {
+        name: (y_validation, positive_class_score(pipe, X_validation))
+        for name, pipe in pipelines.items()
+    }
+    roc_curves(curves, IMAGES / "roc_validation.png", title="ROC — somente validação")
+    precision_recall_curves(
+        curves, IMAGES / "precision_recall_validation.png",
+        title="Precision–Recall — somente validação",
+    )
 
 
 def municipal_analysis(data, score, threshold):
@@ -179,7 +169,8 @@ def main() -> None:
     selected_pipe = pipelines[selected]
     validation_score = positive_class_score(selected_pipe, X_validation)
     threshold = pd.DataFrame([threshold_metrics(y_validation, validation_score, t) for t in THRESHOLDS])
-    # Compromisso explícito: menor limiar com recall >= 0,85; desempate por F1. Caso vazio, 0,5.
+    # Compromisso explícito: entre os limiares com recall >= 0,85, escolhe o de maior F1
+    # (desempate por precision). Caso nenhum atinja o recall mínimo, usa 0,5.
     viable = threshold.loc[threshold["recall"].ge(.85)]
     selected_threshold = float(viable.sort_values(["f1", "precision"], ascending=False).iloc[0]["threshold"]) if len(viable) else .5
 
@@ -223,7 +214,7 @@ def main() -> None:
     (REPORTS / "final_validation_metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
     protocol = f"""# Protocolo congelado do modelo candidato\n\nDataset: `data/processed/modeling_dataset_2024_gold.parquet`, 1.851.828 × 24.\nVersão da decisão: 2026-09-09. Semente: {RANDOM_STATE}.\n\nFeatures candidatas finais ({len(features)}): {', '.join(f'`{x}`' for x in features)}.\nExcluídas: target, peso e todos os identificadores; `proficiencia` é proibida por leakage direto.\n\nPreprocessing: mediana numérica, moda categórica/booleana, OneHotEncoder sparse com categorias desconhecidas ignoradas; escala sparse somente para regressão logística.\n\nAlgoritmo candidato: `{selected}`. Parâmetros: `{chosen_spec['model'].get_params(deep=False)}`.\nThreshold candidato: {selected_threshold:.2f}. Sample weight oficial: {'sim' if use_weight else 'não'}.\nMétricas de seleção: ROC AUC principal; recall e F1; gap treino/validação; interpretabilidade, custo e simplicidade.\n\nA interpretação é territorial: o modelo estima probabilidade individual condicionada ao contexto municipal, rede e UF; alunos do mesmo município+rede recebem a mesma probabilidade. Não é diagnóstico individual nem previsão oficial de meta.\n\nLimitações: features contextuais repetidas, generalização territorial limitada, ausência de atributos individuais legítimos e incerteza sobre o significado operacional de `peso_aluno`. SHAP não foi executado porque o pacote não está instalado.\n\n**O conjunto de teste só será acessado após aprovação deste protocolo.**\n"""
     (REPORTS / "final_model_protocol.md").write_text(protocol, encoding="utf-8")
-    report = f"""# Validação final controlada\n\nForam comparados Dummy, três regressões logísticas, seis árvores e uma Random Forest controlada usando apenas treino e validação. O candidato `{selected}` foi escolhido entre modelos a até 0,002 da melhor AUC, priorizando menor gap, F1 e custo.\n\nA análise de threshold selecionou {selected_threshold:.2f} entre {', '.join(map(str, THRESHOLDS))}, exigindo recall mínimo de 0,85 e usando F1/precision no desempate. O uso de peso foi {'adotado' if use_weight else 'rejeitado'}: exige ganho de AUC superior a 0,002 e seu significado segue **REVISAR COM O GRUPO**.\n\nA Random Forest foi limitada a 40 árvores, profundidade 10, folha mínima 200 e dois jobs. GroupKFold não foi executado pelo custo em 1,85 milhão de linhas. SHAP não foi executado porque a dependência está ausente; não houve instalação.\n\nFeature importance é associativa, agregada para as 16 colunas originais e não causal. A análise municipal/rede é ferramenta de priorização analítica.\n\n**TEST SET NÃO ACESSADO.** Nenhuma seleção, fit, transformação, predição, SHAP ou métrica usou o teste.\n"""
+    report = f"""# Validação final controlada\n\nForam comparados Dummy, três regressões logísticas, seis árvores e uma Random Forest controlada usando apenas treino e validação. O candidato `{selected}` foi escolhido entre modelos a até 0,002 da melhor AUC, priorizando menor gap, F1 e custo.\n\nA análise de threshold selecionou {selected_threshold:.2f} entre {', '.join(map(str, THRESHOLDS))}: entre os limiares com recall mínimo de 0,85, foi escolhido o de maior F1, com precision como desempate. O uso de peso foi {'adotado' if use_weight else 'rejeitado'}: exige ganho de AUC superior a 0,002 e seu significado segue **REVISAR COM O GRUPO**.\n\nA Random Forest foi limitada a 40 árvores, profundidade 10, folha mínima 200 e dois jobs. GroupKFold não foi executado pelo custo em 1,85 milhão de linhas. SHAP não foi executado porque a dependência está ausente; não houve instalação.\n\nFeature importance é associativa, agregada para as 16 colunas originais e não causal. A análise municipal/rede é ferramenta de priorização analítica.\n\n**TEST SET NÃO ACESSADO.** Nenhuma seleção, fit, transformação, predição, SHAP ou métrica usou o teste.\n"""
     (REPORTS / "final_validation_results.md").write_text(report, encoding="utf-8")
     print(json.dumps({"selected": selected, "threshold": selected_threshold,
                       "sample_weight": use_weight, "test_accessed": False}, indent=2))

@@ -1,0 +1,14 @@
+{
+  "municipios": 828,
+  "alunos": 243746,
+  "media_observada": 0.6311669841960701,
+  "media_prevista": 0.626031880335819,
+  "vies": -0.005135103860251123,
+  "mae": 0.08773568201516077,
+  "rmse": 0.11928162260798875,
+  "mae_ponderado_por_aluno": 0.054017285785946056,
+  "correlacao_pearson": 0.7741990329246272,
+  "desvio_observado": 0.1882690150424302,
+  "desvio_previsto": 0.1471060911640493,
+  "razao_de_encolhimento": 0.7813611343900427
+}
